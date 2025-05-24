@@ -1,7 +1,6 @@
 // Firebase configuration and initialization
 import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
-import { getAnalytics } from 'firebase/analytics';
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
@@ -21,11 +20,6 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 auth.useDeviceLanguage(); // Set language to device default
 
-// Export auth instance
+// Export auth instance and app
 export { auth };
-
-
-// Initialize Analytics (optional)
-export const analytics = getAnalytics(app);
-
 export default app;
