@@ -77,15 +77,17 @@ const styles = {
     boxShadow: '0 25px 50px rgba(0, 0, 0, 0.25)',
     overflow: 'hidden',
     width: '100%',
-    maxWidth: '900px',
+    maxWidth: '800px', // Match SignUpPage max width
     display: 'flex',
-    minHeight: '500px',
+    minHeight: '420px', // Match SignUpPage min height
     flexDirection: 'row',
     zIndex: 1,
+    margin: '10px', // Reduced margin
+    border: '1px solid rgba(0, 0, 0, 0.1)', // Reduced border thickness
   },
   leftPanel: {
     flex: '1',
-    padding: '40px 35px',
+    padding: '36px 30px', // Match SignUpPage padding
     display: 'flex',
     flexDirection: 'column',
     justifyContent: 'center',
@@ -120,7 +122,7 @@ const styles = {
     fontWeight: '500',
   },
   titleSection: {
-    marginBottom: '30px',
+    marginBottom: '20px',
   },
   title: {
     fontSize: '28px',
@@ -135,8 +137,8 @@ const styles = {
   },
   googleButton: {
     width: '100%',
-    padding: '14px',
-    border: '2px solid #e5e5e5',
+    padding: '10px', // Reduced padding
+    border: '1px solid #e5e5e5', // Reduced border thickness
     borderRadius: '12px',
     background: 'white',
     display: 'flex',
@@ -147,26 +149,31 @@ const styles = {
     fontWeight: '500',
     color: '#1a1a1a',
     cursor: 'pointer',
-    marginBottom: '25px',
+    marginBottom: '15px',
     transition: 'all 0.2s ease',
+
   },
   divider: {
     display: 'flex',
     alignItems: 'center',
-    marginBottom: '25px',
+    marginBottom: '0px'
+    
   },
   dividerLine: {
     flex: '1',
     height: '1px',
     background: '#e5e5e5',
+    
   },
   dividerText: {
     padding: '0 15px',
     color: '#999',
+    
     fontSize: '13px',
   },
   inputGroup: {
-    marginBottom: '18px',
+    marginBottom: '13px', // Match SignUpPage spacing between inputs
+    
   },
   label: {
     display: 'flex',
@@ -175,20 +182,22 @@ const styles = {
     fontSize: '13px',
     fontWeight: '600',
     color: '#1a1a1a',
+    
   },
   input: {
     width: '100%',
-    padding: '14px',
-    border: '2px solid #e5e5e5',
+    padding: '10px', // Reduced padding
+    border: '1px solid #e5e5e5', // Reduced border thickness
     borderRadius: '12px',
     fontSize: '15px',
     outline: 'none',
     transition: 'border-color 0.2s ease',
     boxSizing: 'border-box',
+    background: 'rgba(230, 230, 230, 0.9)',
   },
   forgotPassword: {
     textAlign: 'center',
-    marginBottom: '25px',
+    marginBottom: 'auto',
   },
   forgotPasswordLink: {
     color: '#667eea',
@@ -198,15 +207,16 @@ const styles = {
   },
   loginButton: {
     width: '100%',
-    padding: '14px',
+    padding: '10px', // Reduced padding
+    border: '1px solid #e5e5e5', // Reduced border thickness
     background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
     color: 'white',
-    border: 'none',
     borderRadius: '12px',
     fontSize: '15px',
     fontWeight: '600',
     cursor: 'pointer',
     transition: 'all 0.2s ease',
+    marginTop: '10px',
   },
   rightPanel: {
     flex: '1',
@@ -226,11 +236,12 @@ const styles = {
   },
   featureCard: {
     background: 'rgba(255, 255, 255, 0.9)',
+    margin: '20px', // Reduced margin
     borderRadius: '20px',
-    padding: '35px',
+    padding: '20px', // Reduced padding
     textAlign: 'center',
     backdropFilter: 'blur(10px)',
-    border: '1px solid rgba(255, 255, 255, 0.2)',
+    border: '1px solid rgba(255, 255, 255, 0.1)', // Reduced border thickness
   },
   featureIcon: {
     width: '70px',

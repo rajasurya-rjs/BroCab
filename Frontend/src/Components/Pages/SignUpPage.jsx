@@ -509,7 +509,7 @@ const SignUpPage = () => {
                     borderRadius: "6px 0 0 6px",
                     border: `2px solid ${errors.phone ? "#e53e3e" : "#e5e5e5"}`,
                     borderRight: "none",
-                    height: "40px",
+                    height: "45px",
                     display: "flex",
                     alignItems: "center",
                     fontSize: "15px",
@@ -525,6 +525,7 @@ const SignUpPage = () => {
                     ...styles.input(errors.phone),
                     borderRadius: "0 12px 12px 0",
                     borderLeft: "none",
+
                     flex: 1,
                     ...(focused === "phone" ? styles.inputFocused : {}),
                   }}
