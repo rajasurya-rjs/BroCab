@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import './Available_rides.css';
 import Navbar from '../Navbar/Navbar';
@@ -18,113 +18,87 @@ const Available_rides = () => {
   
   // Search form state
   const [searchForm, setSearchForm] = useState({
-    pickup: urlParams.get('origin') || '',
-    destination: urlParams.get('destination') || '',
-    date: urlParams.get('date') || ''
+    origin: urlParams.get('origin')?.trim() || '',
+    destination: urlParams.get('destination')?.trim() || '',
+    date: urlParams.get('date')?.trim() || ''
   });
 
-  useEffect(() => {
-    if (searchForm.pickup && searchForm.destination && searchForm.date) {
-      fetchAvailableRides();
+  // Memoize the fetch function to prevent multiple calls
+  const fetchAvailableRides = useCallback(async () => {
+    if (!searchForm.origin || !searchForm.destination || !searchForm.date) {
+      return;
     }
-  }, [searchForm.pickup, searchForm.destination, searchForm.date]);
 
-  const fetchAvailableRides = async () => {
     try {
       setLoading(true);
       setError(null);
       
-      // Mock data for testing - using current search form values
-      const mockData = [
-        {
-          "id": 1,
-          "leader_id": 5,
-          "origin": searchForm.pickup,
-          "destination": searchForm.destination,
-          "date": searchForm.date,
-          "time": "06:30",
-          "seats": 4,
-          "seats_filled": 1,
-          "price": 25.50,
-          "duration": "3:30 hrs",
-          "vehicle_type": "Car"
-        },
-        {
-          "id": 2,
-          "leader_id": 7,
-          "origin": searchForm.pickup,
-          "destination": searchForm.destination,
-          "date": searchForm.date,
-          "time": "08:15",
-          "seats": 3,
-          "seats_filled": 0,
-          "price": 22.00,
-          "duration": "3:45 hrs",
-          "vehicle_type": "SUV"
-        },
-        {
-          "id": 3,
-          "leader_id": 8,
-          "origin": searchForm.pickup,
-          "destination": searchForm.destination,
-          "date": searchForm.date,
-          "time": "10:45",
-          "seats": 4,
-          "seats_filled": 2,
-          "price": 30.00,
-          "duration": "3:20 hrs",
-          "vehicle_type": "Car"
-        },
-        {
-          "id": 4,
-          "leader_id": 12,
-          "origin": searchForm.pickup,
-          "destination": searchForm.destination,
-          "date": searchForm.date,
-          "time": "14:30",
-          "seats": 3,
-          "seats_filled": 1,
-          "price": 28.75,
-          "duration": "3:15 hrs",
-          "vehicle_type": "Car"
-        },
-        {
-          "id": 5,
-          "leader_id": 15,
-          "origin": searchForm.pickup,
-          "destination": searchForm.destination,
-          "date": searchForm.date,
-          "time": "16:00",
-          "seats": 4,
-          "seats_filled": 0,
-          "price": 26.25,
-          "duration": "3:35 hrs",
-          "vehicle_type": "SUV"
-        },
-        {
-          "id": 6,
-          "leader_id": 18,
-          "origin": searchForm.pickup,
-          "destination": searchForm.destination,
-          "date": searchForm.date,
-          "time": "18:15",
-          "seats": 3,
-          "seats_filled": 2,
-          "price": 32.00,
-          "duration": "3:25 hrs",
-          "vehicle_type": "Car"
+      // Build API URL with query parameters
+      const apiParams = new URLSearchParams({
+        origin: searchForm.origin.trim(),
+        destination: searchForm.destination.trim(),
+        date: searchForm.date.trim()
+      });
+      
+      const apiUrl = `http://localhost:8080/ride/filter?${apiParams.toString()}`;
+      console.log('Making API call to:', apiUrl);
+      
+      // Make API call with timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+      
+      const response = await fetch(apiUrl, {
+        signal: controller.signal,
+        headers: {
+          'Content-Type': 'application/json',
         }
-      ];
-
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      setRides(mockData);
+      });
+      
+      clearTimeout(timeoutId);
+      
+      if (!response.ok) {
+        if (response.status === 500) {
+          throw new Error('Server error. Please check your backend logs for details.');
+        }
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      console.log('API Response received:', data);
+      
+      // Handle the response
+      if (data && typeof data === 'object' && !Array.isArray(data)) {
+        // Single object response
+        setRides([data]);
+      } else if (Array.isArray(data)) {
+        // Array response
+        setRides(data);
+      } else if (data === null || data === undefined) {
+        // No data found
+        setRides([]);
+      } else {
+        // Unexpected response format
+        console.warn('Unexpected response format:', data);
+        setRides([]);
+      }
       
     } catch (err) {
-      setError(err.message);
+      console.error('Error fetching rides:', err);
+      if (err.name === 'AbortError') {
+        setError('Request timed out. Please try again.');
+      } else {
+        setError(`Failed to fetch rides: ${err.message}`);
+      }
+      setRides([]);
     } finally {
       setLoading(false);
     }
-  };
+  }, [searchForm.origin, searchForm.destination, searchForm.date]);
+
+  // Use effect with proper dependency array
+  useEffect(() => {
+    fetchAvailableRides();
+  }, [fetchAvailableRides]);
 
   // Handle input changes
   const handleInputChange = (e) => {
@@ -138,54 +112,68 @@ const Available_rides = () => {
   // Handle search form submission
   const handleSearch = (e) => {
     e.preventDefault();
-    if (!searchForm.pickup || !searchForm.destination || !searchForm.date) {
+    
+    const trimmedOrigin = searchForm.origin.trim();
+    const trimmedDestination = searchForm.destination.trim();
+    const trimmedDate = searchForm.date.trim();
+    
+    if (!trimmedOrigin || !trimmedDestination || !trimmedDate) {
       alert('Please fill in all fields');
       return;
     }
-    // The useEffect will automatically trigger fetchAvailableRides when form values change
+    
+    // Update form with trimmed values
+    setSearchForm({
+      origin: trimmedOrigin,
+      destination: trimmedDestination,
+      date: trimmedDate
+    });
   };
 
   // Swap pickup and destination
   const handleSwapLocations = () => {
     setSearchForm(prev => ({
       ...prev,
-      pickup: prev.destination,
-      destination: prev.pickup
+      origin: prev.destination,
+      destination: prev.origin
     }));
   };
 
   const formatTime = (time) => {
-    return new Date(`2000-01-01T${time}`).toLocaleTimeString('en-US', {
-      hour: 'numeric',
-      minute: '2-digit',
-      hour12: true
-    });
-  };
-
-  const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      weekday: 'short',
-      month: 'short',
-      day: 'numeric'
-    });
+    if (!time) return 'N/A';
+    try {
+      return new Date(`2000-01-01T${time}`).toLocaleTimeString('en-US', {
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true
+      });
+    } catch {
+      return time;
+    }
   };
 
   const calculateArrivalTime = (departureTime, duration) => {
-    const [hours, minutes] = departureTime.split(':');
-    const [durationHours, durationMinutes] = duration.split(':');
+    if (!departureTime || !duration) return 'N/A';
     
-    const departure = new Date();
-    departure.setHours(parseInt(hours), parseInt(minutes), 0, 0);
-    
-    const arrival = new Date(departure);
-    arrival.setHours(arrival.getHours() + parseInt(durationHours));
-    arrival.setMinutes(arrival.getMinutes() + parseInt(durationMinutes));
-    
-    return arrival.toLocaleTimeString('en-US', {
-      hour: 'numeric',
-      minute: '2-digit',
-      hour12: true
-    });
+    try {
+      const [hours, minutes] = departureTime.split(':');
+      const [durationHours, durationMinutes] = duration.split(':');
+      
+      const departure = new Date();
+      departure.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+      
+      const arrival = new Date(departure);
+      arrival.setHours(arrival.getHours() + parseInt(durationHours));
+      arrival.setMinutes(arrival.getMinutes() + parseInt(durationMinutes));
+      
+      return arrival.toLocaleTimeString('en-US', {
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true
+      });
+    } catch (error) {
+      return 'N/A';
+    }
   };
 
   const handleBookRide = (rideId) => {
@@ -205,6 +193,9 @@ const Available_rides = () => {
           <h2>Oops! Something went wrong</h2>
           <p>{error}</p>
           <button onClick={handleBackToSearch} className="bcRides-back-btn">Back to Search</button>
+          <button onClick={fetchAvailableRides} className="bcRides-retry-btn" style={{marginLeft: '10px'}}>
+            Retry
+          </button>
         </div>
       </div>
     );
@@ -223,8 +214,8 @@ const Available_rides = () => {
                 <label className="bcRides-input-label">From</label>
                 <input
                   type="text"
-                  name="pickup"
-                  value={searchForm.pickup}
+                  name="origin"
+                  value={searchForm.origin}
                   onChange={handleInputChange}
                   placeholder="Enter pickup location"
                   className="bcRides-location-input"
@@ -267,8 +258,8 @@ const Available_rides = () => {
                 />
               </div>
 
-              <button type="submit" className="bcRides-search-btn">
-                Search
+              <button type="submit" className="bcRides-search-btn" disabled={loading}>
+                {loading ? 'Searching...' : 'Search'}
               </button>
             </div>
           </form>
@@ -282,12 +273,10 @@ const Available_rides = () => {
           </div>
         ) : (
           <>
-            {/* Results Count */}
             <div className="bcRides-results-info">
               <span className="bcRides-results-count">{rides.length} results</span>
             </div>
 
-            {/* Rides List */}
             <div className="bcRides-content-wrapper">
               {rides.length === 0 ? (
                 <div className="bcRides-no-rides">
@@ -300,14 +289,13 @@ const Available_rides = () => {
                 </div>
               ) : (
                 <div className="bcRides-list">
-                  {rides.map((ride) => (
-                    <div key={ride.id} className="bcRides-card">
+                  {rides.map((ride, index) => (
+                    <div key={ride.id || index} className="bcRides-card">
                       <div className="bcRides-card-content">
-                        {/* Time and Route Section */}
                         <div className="bcRides-time-route">
                           <div className="bcRides-time-info">
                             <span className="bcRides-departure-time">{formatTime(ride.time)}</span>
-                            <span className="bcRides-duration">{ride.duration}</span>
+                            <span className="bcRides-duration">{ride.duration || 'N/A'}</span>
                             <span className="bcRides-arrival-time">{calculateArrivalTime(ride.time, ride.duration)}</span>
                           </div>
                           <div className="bcRides-route-info">
@@ -315,19 +303,18 @@ const Available_rides = () => {
                           </div>
                         </div>
 
-                        {/* Vehicle and Seats Info */}
                         <div className="bcRides-vehicle-info">
                           <div className="bcRides-vehicle-details">
-                            <span className="bcRides-vehicle-type">{ride.vehicle_type}</span>
+                            <span className="bcRides-vehicle-type">{ride.vehicle_type || 'Car'}</span>
                             <div className="bcRides-seats-display">
                               <span className="bcRides-seats-text">
-                                {ride.seats - ride.seats_filled} seats available
+                                {(ride.seats || 0) - (ride.seats_filled || 0)} seats available
                               </span>
                               <div className="bcRides-seats-visual">
-                                {[...Array(ride.seats)].map((_, index) => (
+                                {[...Array(ride.seats || 4)].map((_, seatIndex) => (
                                   <div 
-                                    key={index} 
-                                    className={`bcRides-seat-icon ${index < ride.seats_filled ? 'filled' : 'empty'}`}
+                                    key={seatIndex} 
+                                    className={`bcRides-seat-icon ${seatIndex < (ride.seats_filled || 0) ? 'filled' : 'empty'}`}
                                   >
                                     👤
                                   </div>
@@ -337,17 +324,16 @@ const Available_rides = () => {
                           </div>
                         </div>
 
-                        {/* Price and Book Section */}
                         <div className="bcRides-price-book">
                           <div className="bcRides-price-info">
-                            <span className="bcRides-price">${ride.price}</span>
+                            <span className="bcRides-price">${ride.price || '0'}</span>
                           </div>
                           <button 
                             onClick={() => handleBookRide(ride.id)}
                             className="bcRides-book-btn"
-                            disabled={ride.seats - ride.seats_filled === 0}
+                            disabled={(ride.seats || 0) - (ride.seats_filled || 0) === 0}
                           >
-                            {ride.seats - ride.seats_filled === 0 ? 'Fully Booked' : 'Book Now'}
+                            {(ride.seats || 0) - (ride.seats_filled || 0) === 0 ? 'Fully Booked' : 'Book Now'}
                           </button>
                         </div>
                       </div>

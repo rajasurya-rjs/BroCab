@@ -182,7 +182,6 @@ func InitDatabase() {
 	if err := sqlDB.Ping(); err != nil {
 		log.Fatal("❌ Failed to ping Supabase database:", err)
 	}
-
 	DB = db
 	fmt.Printf("✅ Supabase database connected successfully via %s!\n", connectionType)
 
