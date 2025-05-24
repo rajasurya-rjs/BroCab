@@ -4,8 +4,6 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"os"
-	"path/filepath"
 	"strings"
 
 	firebase "firebase.google.com/go/v4"
@@ -19,24 +17,7 @@ var authClient *auth.Client
 
 // Initialize Firebase Admin SDK
 func InitFirebase() error {
-	// Try to get credentials file path from environment variable
-	credentialsPath := os.Getenv("FIREBASE_CREDENTIALS_PATH")
-
-	// If not set, try the default location outside the project
-	if credentialsPath == "" {
-		homeDir, err := os.UserHomeDir()
-		if err != nil {
-			return fmt.Errorf("error getting home directory: %v", err)
-		}
-		credentialsPath = filepath.Join(homeDir, "credentials", "brocab-1c545-firebase-adminsdk-fbsvc-e3e6893c15.json")
-	}
-
-	// Check if the credentials file exists
-	if _, err := os.Stat(credentialsPath); os.IsNotExist(err) {
-		return fmt.Errorf("Firebase credentials file not found at: %s. Please set FIREBASE_CREDENTIALS_PATH environment variable or place the file in ~/credentials/", credentialsPath)
-	}
-
-	opt := option.WithCredentialsFile(credentialsPath)
+	opt := option.WithCredentialsFile("brocab-1c545-firebase-adminsdk-fbsvc-e3e6893c15.json")
 	app, err := firebase.NewApp(context.Background(), nil, opt)
 	if err != nil {
 		return fmt.Errorf("error initializing firebase app: %v", err)
@@ -49,7 +30,7 @@ func InitFirebase() error {
 
 	firebaseApp = app
 	authClient = client
-	fmt.Printf("✅ Firebase initialized with credentials from: %s\n", credentialsPath)
+	fmt.Println("✅ Firebase initialized")
 	return nil
 }
 
