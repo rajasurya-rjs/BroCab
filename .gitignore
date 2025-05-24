@@ -1,6 +1,9 @@
 # Firebase service account credentials
 backend/brocab-1c545-firebase-adminsdk-fbsvc-e3e6893c15.json
 
+# Firebase functions
+functions/
+
 # Node modules
 node_modules/
 
