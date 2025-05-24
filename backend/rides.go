@@ -125,7 +125,11 @@ func FilterRides(c *gin.Context) {
 	}
 
 	var rides []Ride
-	if err := DB.Where("origin = ? AND destination = ? AND date = ?", origin, destination, date).Find(&rides).Error; err != nil {
+	err := SafeQuery(func() error {
+		return DB.Where("origin = ? AND destination = ? AND date = ?", origin, destination, date).Find(&rides).Error
+	})
+
+	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch rides"})
 		return
 	}
