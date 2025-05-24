@@ -1,9 +1,10 @@
 import React from 'react';
 import './Navbar.css'; // Import Navbar-specific styles
-import { BrowserRouter, Routes, Route, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 const Navbar = () => {
   const navigate = useNavigate();
+  
   return (
     <nav className="bcDash-navbar">
       <div className="bcDash-nav-brand">BroCab</div>
@@ -11,7 +12,12 @@ const Navbar = () => {
         <a href="#" className="bcDash-nav-link">My Rides</a>
         <a href="#" className="bcDash-nav-link">My Privilege</a>
         <a href="#" className="bcDash-nav-link">Notifications</a>
-        <a href="#" className="bcDash-nav-link">Contact Us</a>
+        <button 
+          onClick={() => navigate('/contact-us')} 
+          className="bcDash-nav-link bcDash-nav-button"
+        >
+          Contact Us
+        </button>
       </div>
       <div className="bcDash-nav-auth">
         <button className="bcDash-login-btn" onClick={() => navigate('/login')}>Login</button>

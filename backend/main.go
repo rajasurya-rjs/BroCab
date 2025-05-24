@@ -36,20 +36,20 @@ func main() {
 	protected.Use(FirebaseAuthMiddleware())
 
 	// User APIs
-	protected.POST("/user", CreateUser)                       // POST /user
-	protected.GET("/user/:userID", GetUserBasic)              // GET /user/:userID
-	protected.GET("/user/rides/posted", GetRidesPostedByUser) // GET /user/rides/posted
-	protected.GET("/user/rides/joined", GetRidesJoinedByUser) // GET /user/rides/joined
-	protected.GET("/user/privileges", GetUserPrivileges)      // GET /user/privileges
-	protected.GET("/user/notifications", GetUserNotifications) // GET /user/notifications
+	protected.POST("/user", CreateUser)                                           // POST /user
+	protected.GET("/user/:userID", GetUserBasic)                                  // GET /user/:userID
+	protected.GET("/user/rides/posted", GetRidesPostedByUser)                     // GET /user/rides/posted
+	protected.GET("/user/rides/joined", GetRidesJoinedByUser)                     // GET /user/rides/joined
+	protected.GET("/user/privileges", GetUserPrivileges)                          // GET /user/privileges
+	protected.GET("/user/notifications", GetUserNotifications)                    // GET /user/notifications
 	protected.GET("/user/notifications/unread-count", GetUnreadNotificationCount) // GET /user/notifications/unread-count
-	protected.DELETE("/user/cancel-ride/:rideID", CancelRideParticipation) // DELETE /user/cancel-ride/:rideID
+	protected.DELETE("/user/cancel-ride/:rideID", CancelRideParticipation)        // DELETE /user/cancel-ride/:rideID
 
 	// Ride APIs
 	protected.POST("/ride", AddRide)                                 // POST /ride
 	protected.GET("/ride/:rideID/leader", GetRideLeader)             // GET /ride/:rideID/leader
 	protected.GET("/ride/filter", FilterRides)                       // GET /rides/filter?origin=College Campus&destination=City Airport&date=2025-06-10
-	protected.GET("/ride/:rideId/requests", GetJoinRequestsForRide)  // GET /ride/:rideID/requests
+	protected.GET("/ride/:rideID/requests", GetJoinRequestsForRide)  // GET /ride/:rideID/requests
 	protected.POST("/ride/:rideID/join", SendJoinRequest)            // POST /ride/:rideID/join
 	protected.POST("/ride/:rideID/join-ride", JoinRideWithPrivilege) // POST /ride/:rideID/join-ride
 

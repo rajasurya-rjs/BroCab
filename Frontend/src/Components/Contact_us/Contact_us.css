@@ -1,0 +1,430 @@
+/* Main Container */
+.bcContact-container {
+  min-height: 100vh;
+  width: 100%;
+  position: relative;
+  background-size: cover;
+  background-position: center center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+  display: flex;
+  flex-direction: column;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  color: #1e293b;
+}
+
+.bcContact-main-content {
+  flex: 1;
+  padding: 40px 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+/* Header */
+.bcContact-header {
+  text-align: center;
+  margin-bottom: 40px;
+  animation: fadeInUp 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.bcContact-title {
+  font-size: clamp(32px, 6vw, 48px);
+  font-weight: 900;
+  color: #1e293b;
+  margin-bottom: 16px;
+  line-height: 1.1;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+  letter-spacing: -1px;
+}
+
+.bcContact-subtitle {
+  font-size: 18px;
+  color: #64748b;
+  font-weight: 500;
+  max-width: 600px;
+  margin: 0 auto;
+  line-height: 1.6;
+}
+
+/* Content Wrapper */
+.bcContact-content-wrapper {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 40px;
+  margin-bottom: 60px;
+}
+
+/* Form Section */
+.bcContact-form-container {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(8px);
+  border-radius: 20px;
+  padding: 32px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.bcContact-form-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: #1e293b;
+  margin-bottom: 24px;
+}
+
+/* Success/Error Messages */
+.bcContact-success-message,
+.bcContact-error-message {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  border-radius: 12px;
+  margin-bottom: 24px;
+  animation: slideIn 0.3s ease-out;
+}
+
+.bcContact-success-message {
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.2);
+  color: #065f46;
+}
+
+.bcContact-error-message {
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  color: #991b1b;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Form Styles */
+.bcContact-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.bcContact-form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+.bcContact-input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.bcContact-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #374151;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.bcContact-input,
+.bcContact-select,
+.bcContact-textarea {
+  padding: 14px 16px;
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 500;
+  background: white;
+  transition: all 0.3s;
+  outline: none;
+  font-family: inherit;
+}
+
+.bcContact-input:focus,
+.bcContact-select:focus,
+.bcContact-textarea:focus {
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.bcContact-textarea {
+  resize: vertical;
+  min-height: 120px;
+}
+
+.bcContact-submit-btn {
+  padding: 16px 32px;
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.bcContact-submit-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #5856eb 0%, #7c3aed 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+}
+
+.bcContact-submit-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.bcContact-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-left: 2px solid white;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Info Section */
+.bcContact-info-container {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(8px);
+  border-radius: 20px;
+  padding: 32px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  height: fit-content;
+}
+
+.bcContact-info-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: #1e293b;
+  margin-bottom: 24px;
+}
+
+.bcContact-info-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 32px;
+}
+
+.bcContact-info-card {
+  padding: 16px;
+  background: rgba(99, 102, 241, 0.05);
+  border-radius: 12px;
+  border: 1px solid rgba(99, 102, 241, 0.1);
+  transition: all 0.3s;
+}
+
+.bcContact-info-card:hover {
+  background: rgba(99, 102, 241, 0.08);
+  transform: translateY(-2px);
+}
+
+.bcContact-info-icon {
+  font-size: 24px;
+  margin-bottom: 8px;
+}
+
+.bcContact-info-card h4 {
+  font-size: 16px;
+  font-weight: 700;
+  color: #1e293b;
+  margin-bottom: 4px;
+}
+
+.bcContact-info-card p {
+  font-size: 14px;
+  color: #64748b;
+  font-weight: 500;
+  margin-bottom: 4px;
+  line-height: 1.4;
+}
+
+.bcContact-info-note {
+  font-size: 12px;
+  color: #6366f1;
+  font-weight: 600;
+}
+
+/* Social Section */
+.bcContact-social-section h4 {
+  font-size: 16px;
+  font-weight: 700;
+  color: #1e293b;
+  margin-bottom: 16px;
+}
+
+.bcContact-social-links {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.bcContact-social-link {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: rgba(99, 102, 241, 0.05);
+  border-radius: 8px;
+  text-decoration: none;
+  color: #64748b;
+  font-weight: 500;
+  font-size: 14px;
+  transition: all 0.3s;
+}
+
+.bcContact-social-link:hover {
+  background: rgba(99, 102, 241, 0.1);
+  color: #6366f1;
+  transform: translateX(4px);
+}
+
+/* FAQ Section */
+.bcContact-faq-section {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(8px);
+  border-radius: 20px;
+  padding: 32px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.bcContact-faq-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: #1e293b;
+  margin-bottom: 24px;
+  text-align: center;
+}
+
+.bcContact-faq-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 20px;
+}
+
+.bcContact-faq-item {
+  padding: 20px;
+  background: rgba(99, 102, 241, 0.05);
+  border-radius: 12px;
+  border: 1px solid rgba(99, 102, 241, 0.1);
+  transition: all 0.3s;
+}
+
+.bcContact-faq-item:hover {
+  background: rgba(99, 102, 241, 0.08);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.1);
+}
+
+.bcContact-faq-item h4 {
+  font-size: 16px;
+  font-weight: 700;
+  color: #1e293b;
+  margin-bottom: 8px;
+}
+
+.bcContact-faq-item p {
+  font-size: 14px;
+  color: #64748b;
+  line-height: 1.5;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .bcContact-main-content {
+    padding: 20px 16px;
+  }
+
+  .bcContact-content-wrapper {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+
+  .bcContact-form-container,
+  .bcContact-info-container {
+    padding: 24px;
+  }
+
+  .bcContact-form-row {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .bcContact-faq-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .bcContact-form-container,
+  .bcContact-info-container,
+  .bcContact-faq-section {
+    padding: 20px;
+  }
+
+  .bcContact-title {
+    font-size: 28px;
+  }
+
+  .bcContact-subtitle {
+    font-size: 16px;
+  }
+
+  .bcContact-info-card p {
+    font-size: 13px;
+  }
+}
+
+/* Focus styles for accessibility */
+.bcContact-input:focus,
+.bcContact-select:focus,
+.bcContact-textarea:focus,
+.bcContact-submit-btn:focus {
+  outline: 2px solid #6366f1;
+  outline-offset: 2px;
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

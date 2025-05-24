@@ -64,6 +64,23 @@
   width: 100%;
 }
 
+/* Button styling for Contact Us navigation */
+.bcDash-nav-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: inherit;
+  font-weight: inherit;
+  color: inherit;
+  text-decoration: none;
+  transition: all 0.3s;
+}
+
+.bcDash-nav-button:hover {
+  color: #6366f1;
+}
+
 .bcDash-nav-auth {
   display: flex;
   gap: 15px;
@@ -163,6 +180,7 @@
 
 /* Focus styles for better accessibility */
 .bcDash-nav-link:focus,
+.bcDash-nav-button:focus,
 .bcDash-login-btn:focus,
 .bcDash-signup-btn:focus {
   outline: 2px solid #6366f1;
