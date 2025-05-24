@@ -3,7 +3,9 @@ package main
 import (
 	"log"
 	"os"
+	"time"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 )
@@ -25,6 +27,16 @@ func main() {
 	}
 
 	r := gin.Default()
+
+	// Configure CORS to allow frontend communication
+	r.Use(cors.New(cors.Config{
+		AllowOrigins:     []string{"http://localhost:3000", "http://localhost:5173", "http://127.0.0.1:3000", "http://127.0.0.1:5173"},
+		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"},
+		AllowHeaders:     []string{"Origin", "Content-Length", "Content-Type", "Authorization", "Accept", "X-Requested-With"},
+		ExposeHeaders:    []string{"Content-Length"},
+		AllowCredentials: true,
+		MaxAge:           12 * time.Hour,
+	}))
 
 	// Public route example
 	r.GET("/public", func(c *gin.Context) {
@@ -48,7 +60,7 @@ func main() {
 	// Ride APIs
 	protected.POST("/ride", AddRide)                                 // POST /ride
 	protected.GET("/ride/:rideID/leader", GetRideLeader)             // GET /ride/:rideID/leader
-	protected.GET("/ride/filter", FilterRides)                       // GET /rides/filter?origin=College Campus&destination=City Airport&date=2025-06-10
+	r.GET("/ride/filter", FilterRides)                               // GET /rides/filter?origin=College Campus&destination=City Airport&date=2025-06-10
 	protected.GET("/ride/:rideID/requests", GetJoinRequestsForRide)  // GET /ride/:rideID/requests
 	protected.POST("/ride/:rideID/join", SendJoinRequest)            // POST /ride/:rideID/join
 	protected.POST("/ride/:rideID/join-ride", JoinRideWithPrivilege) // POST /ride/:rideID/join-ride

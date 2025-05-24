@@ -39,8 +39,7 @@ func InitDatabase() {
 		if password == "" {
 			log.Fatal("❌ POSTGRES_PASSWORD environment variable is required for Supabase connection")
 		}
-
-		// Supabase connection string with SSL
+	// Supabase connection string with SSL
 		dsn = fmt.Sprintf(
 			"postgresql://%s:%s@%s:%s/%s?sslmode=require",
 			user, password, host, port, dbname,
@@ -105,3 +104,9 @@ func getEnv(key, defaultVal string) string {
 	return defaultVal
 }
 
+// isTableExistsError checks if the error is related to an existing table
+func isTableExistsError(errMsg string) bool {
+	// Check for common "table already exists" error messages
+	return strings.Contains(errMsg, "already exists") ||
+		strings.Contains(errMsg, "relation") && strings.Contains(errMsg, "already exists")
+}
