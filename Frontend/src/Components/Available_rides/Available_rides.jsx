@@ -9,6 +9,9 @@ const Available_rides = () => {
   const [rides, setRides] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [selectedRide, setSelectedRide] = useState(null);
+  const [rideDetails, setRideDetails] = useState(null);
+  const [loadingDetails, setLoadingDetails] = useState(false);
   
   const location = useLocation();
   const navigate = useNavigate();
@@ -22,6 +25,113 @@ const Available_rides = () => {
     destination: urlParams.get('destination')?.trim() || '',
     date: urlParams.get('date')?.trim() || ''
   });
+
+  // Function to get coordinates from location name using Nominatim (free geocoding)
+  const getCoordinates = async (locationName) => {
+    try {
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(locationName)}&limit=1`
+      );
+      const data = await response.json();
+      
+      if (data && data.length > 0) {
+        return {
+          lat: parseFloat(data[0].lat),
+          lon: parseFloat(data[0].lon)
+        };
+      }
+      return null;
+    } catch (error) {
+      console.error('Error getting coordinates:', error);
+      return null;
+    }
+  };
+
+  // Function to calculate distance and duration using OSRM (free)
+  const calculateRouteInfo = async (origin, destination) => {
+    try {
+      const originCoords = await getCoordinates(origin);
+      const destCoords = await getCoordinates(destination);
+      
+      if (!originCoords || !destCoords) {
+        return { distance: null, duration: null };
+      }
+
+      // OSRM Route API call for both distance and duration
+      const osrmUrl = `https://router.project-osrm.org/route/v1/driving/${originCoords.lon},${originCoords.lat};${destCoords.lon},${destCoords.lat}?overview=false&alternatives=false&steps=false`;
+      
+      const response = await fetch(osrmUrl);
+      const data = await response.json();
+      
+      if (data && data.routes && data.routes[0]) {
+        const route = data.routes[0];
+        const distanceInKm = (route.distance / 1000).toFixed(1);
+        const durationInMinutes = Math.round(route.duration / 60);
+        const hours = Math.floor(durationInMinutes / 60);
+        const minutes = durationInMinutes % 60;
+        
+        let durationString;
+        if (hours > 0) {
+          durationString = `${hours}h ${minutes}m`;
+        } else {
+          durationString = `${minutes}m`;
+        }
+        
+        return {
+          distance: distanceInKm,
+          duration: durationString
+        };
+      }
+      
+      return { distance: null, duration: null };
+    } catch (error) {
+      console.error('Error calculating route info:', error);
+      return { distance: null, duration: null };
+    }
+  };
+
+  // Function to calculate approximate price per person
+  const calculateApproxPrice = (totalPrice, totalSeats, filledSeats) => {
+    const passengerSeats = totalSeats - 1; // Exclude driver
+    const filledPassengerSeats = filledSeats;
+    const divisor = filledPassengerSeats === 0 ? passengerSeats : filledPassengerSeats + 1;
+    const exactPrice = totalPrice / divisor;
+    
+    // Round to nearest 10 for approximate pricing
+    return Math.round(exactPrice / 10) * 10;
+  };
+
+  // Function to fetch ride details and participants
+  const fetchRideDetails = async (rideId) => {
+    try {
+      setLoadingDetails(true);
+      const response = await fetch(`http://localhost:8080/ride/${rideId}/participants`);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      setRideDetails(data);
+    } catch (error) {
+      console.error('Error fetching ride details:', error);
+      alert('Failed to load ride details. Please try again.');
+    } finally {
+      setLoadingDetails(false);
+    }
+  };
+
+  // Handle ride card click
+  const handleRideClick = (ride) => {
+    setSelectedRide(ride);
+    fetchRideDetails(ride.id);
+  };
+
+  // Close modal
+  const closeModal = () => {
+    setSelectedRide(null);
+    setRideDetails(null);
+  };
 
   // Memoize the fetch function to prevent multiple calls
   const fetchAvailableRides = useCallback(async () => {
@@ -45,7 +155,7 @@ const Available_rides = () => {
       
       // Make API call with timeout
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+      const timeoutId = setTimeout(() => controller.abort(), 10000);
       
       const response = await fetch(apiUrl, {
         signal: controller.signal,
@@ -66,21 +176,34 @@ const Available_rides = () => {
       const data = await response.json();
       console.log('API Response received:', data);
       
-      // Handle the response
+      // Process rides and add route information
+      let ridesData = [];
       if (data && typeof data === 'object' && !Array.isArray(data)) {
-        // Single object response
-        setRides([data]);
+        ridesData = [data];
       } else if (Array.isArray(data)) {
-        // Array response
-        setRides(data);
-      } else if (data === null || data === undefined) {
-        // No data found
-        setRides([]);
-      } else {
-        // Unexpected response format
-        console.warn('Unexpected response format:', data);
-        setRides([]);
+        ridesData = data;
       }
+
+      // Calculate route info for each ride
+      const ridesWithRouteInfo = await Promise.all(
+        ridesData.map(async (ride) => {
+          const routeInfo = await calculateRouteInfo(ride.origin, ride.destination);
+          const approxPrice = calculateApproxPrice(
+            ride.price || 0, 
+            ride.seats || 4, 
+            ride.seats_filled || 0
+          );
+          
+          return {
+            ...ride,
+            distance: routeInfo.distance,
+            calculatedDuration: routeInfo.duration,
+            approxPrice: approxPrice
+          };
+        })
+      );
+      
+      setRides(ridesWithRouteInfo);
       
     } catch (err) {
       console.error('Error fetching rides:', err);
@@ -122,7 +245,6 @@ const Available_rides = () => {
       return;
     }
     
-    // Update form with trimmed values
     setSearchForm({
       origin: trimmedOrigin,
       destination: trimmedDestination,
@@ -153,18 +275,32 @@ const Available_rides = () => {
   };
 
   const calculateArrivalTime = (departureTime, duration) => {
-    if (!departureTime || !duration) return 'N/A';
+    if (!departureTime) return 'N/A';
     
     try {
       const [hours, minutes] = departureTime.split(':');
-      const [durationHours, durationMinutes] = duration.split(':');
-      
       const departure = new Date();
       departure.setHours(parseInt(hours), parseInt(minutes), 0, 0);
       
+      // If we have calculated duration, use it; otherwise use database duration
+      let durationToAdd = duration;
+      if (!durationToAdd || durationToAdd === 'N/A') {
+        return 'N/A';
+      }
+      
+      // Parse duration (could be "1h 30m" or "45m" format)
+      let totalMinutes = 0;
+      if (durationToAdd.includes('h')) {
+        const parts = durationToAdd.split(' ');
+        const hours = parseInt(parts[0].replace('h', ''));
+        const mins = parts[1] ? parseInt(parts[1].replace('m', '')) : 0;
+        totalMinutes = hours * 60 + mins;
+      } else {
+        totalMinutes = parseInt(durationToAdd.replace('m', ''));
+      }
+      
       const arrival = new Date(departure);
-      arrival.setHours(arrival.getHours() + parseInt(durationHours));
-      arrival.setMinutes(arrival.getMinutes() + parseInt(durationMinutes));
+      arrival.setMinutes(arrival.getMinutes() + totalMinutes);
       
       return arrival.toLocaleTimeString('en-US', {
         hour: 'numeric',
@@ -183,6 +319,15 @@ const Available_rides = () => {
 
   const handleBackToSearch = () => {
     navigate('/dashboard');
+  };
+
+  const formatDate = (dateString) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
   };
 
   if (error) {
@@ -269,7 +414,7 @@ const Available_rides = () => {
         {loading ? (
           <div className="bcRides-loading">
             <div className="bcRides-spinner"></div>
-            <p>Finding available rides...</p>
+            <p>Finding available rides and calculating routes...</p>
           </div>
         ) : (
           <>
@@ -290,16 +435,27 @@ const Available_rides = () => {
               ) : (
                 <div className="bcRides-list">
                   {rides.map((ride, index) => (
-                    <div key={ride.id || index} className="bcRides-card">
+                    <div 
+                      key={ride.id || index} 
+                      className="bcRides-card bcRides-clickable"
+                      onClick={() => handleRideClick(ride)}
+                    >
                       <div className="bcRides-card-content">
                         <div className="bcRides-time-route">
                           <div className="bcRides-time-info">
                             <span className="bcRides-departure-time">{formatTime(ride.time)}</span>
-                            <span className="bcRides-duration">{ride.duration || 'N/A'}</span>
-                            <span className="bcRides-arrival-time">{calculateArrivalTime(ride.time, ride.duration)}</span>
+                            <span className="bcRides-duration">
+                              {ride.calculatedDuration || ride.duration || 'N/A'}
+                            </span>
+                            <span className="bcRides-arrival-time">
+                              {calculateArrivalTime(ride.time, ride.calculatedDuration || ride.duration)}
+                            </span>
                           </div>
                           <div className="bcRides-route-info">
-                            <span className="bcRides-route-text">{ride.origin} - {ride.destination}</span>
+                            <span className="bcRides-route-text">
+                              {ride.origin} - {ride.destination}
+                              {ride.distance && <span className="bcRides-distance"> • {ride.distance} km</span>}
+                            </span>
                           </div>
                         </div>
 
@@ -308,10 +464,10 @@ const Available_rides = () => {
                             <span className="bcRides-vehicle-type">{ride.vehicle_type || 'Car'}</span>
                             <div className="bcRides-seats-display">
                               <span className="bcRides-seats-text">
-                                {(ride.seats || 0) - (ride.seats_filled || 0)} seats available
+                                {((ride.seats || 4) - 1) - (ride.seats_filled || 0)} seats available
                               </span>
                               <div className="bcRides-seats-visual">
-                                {[...Array(ride.seats || 4)].map((_, seatIndex) => (
+                                {[...Array((ride.seats || 4) - 1)].map((_, seatIndex) => (
                                   <div 
                                     key={seatIndex} 
                                     className={`bcRides-seat-icon ${seatIndex < (ride.seats_filled || 0) ? 'filled' : 'empty'}`}
@@ -326,14 +482,18 @@ const Available_rides = () => {
 
                         <div className="bcRides-price-book">
                           <div className="bcRides-price-info">
-                            <span className="bcRides-price">${ride.price || '0'}</span>
+                            <span className="bcRides-price">~₹{ride.approxPrice || '0'}</span>
+                            <span className="bcRides-price-label">approx per person</span>
                           </div>
                           <button 
-                            onClick={() => handleBookRide(ride.id)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleBookRide(ride.id);
+                            }}
                             className="bcRides-book-btn"
-                            disabled={(ride.seats || 0) - (ride.seats_filled || 0) === 0}
+                            disabled={((ride.seats || 4) - 1) - (ride.seats_filled || 0) === 0}
                           >
-                            {(ride.seats || 0) - (ride.seats_filled || 0) === 0 ? 'Fully Booked' : 'Book Now'}
+                            {((ride.seats || 4) - 1) - (ride.seats_filled || 0) === 0 ? 'Fully Booked' : 'REQUEST NOW'}
                           </button>
                         </div>
                       </div>
@@ -345,6 +505,118 @@ const Available_rides = () => {
           </>
         )}
       </div>
+
+      {/* Premium Ride Details Modal */}
+      {selectedRide && (
+        <div className="bcRides-modal-overlay" onClick={closeModal}>
+          <div className="bcRides-modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="bcRides-modal-header">
+              <h2>Ride Details</h2>
+              <button className="bcRides-modal-close" onClick={closeModal}>×</button>
+            </div>
+
+            {loadingDetails ? (
+              <div className="bcRides-modal-loading">
+                <div className="bcRides-spinner"></div>
+                <p>Loading ride details...</p>
+              </div>
+            ) : (
+              <div className="bcRides-modal-body">
+                {/* Ride Information */}
+                <div className="bcRides-modal-section">
+                  <h3>Journey Information</h3>
+                  <div className="bcRides-modal-journey">
+                    <div className="bcRides-modal-route">
+                      <div className="bcRides-modal-location">
+                        <div className="bcRides-modal-location-dot bcRides-modal-origin"></div>
+                        <div className="bcRides-modal-location-info">
+                          <span className="bcRides-modal-location-label">From</span>
+                          <span className="bcRides-modal-location-name">{selectedRide.origin}</span>
+                        </div>
+                      </div>
+                      <div className="bcRides-modal-route-line"></div>
+                      <div className="bcRides-modal-location">
+                        <div className="bcRides-modal-location-dot bcRides-modal-destination"></div>
+                        <div className="bcRides-modal-location-info">
+                          <span className="bcRides-modal-location-label">To</span>
+                          <span className="bcRides-modal-location-name">{selectedRide.destination}</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="bcRides-modal-details">
+                      <div className="bcRides-modal-detail-item">
+                        <span className="bcRides-modal-detail-label">Date</span>
+                        <span className="bcRides-modal-detail-value">{formatDate(selectedRide.date)}</span>
+                      </div>
+                      <div className="bcRides-modal-detail-item">
+                        <span className="bcRides-modal-detail-label">Departure</span>
+                        <span className="bcRides-modal-detail-value">{formatTime(selectedRide.time)}</span>
+                      </div>
+                      <div className="bcRides-modal-detail-item">
+                        <span className="bcRides-modal-detail-label">Duration</span>
+                        <span className="bcRides-modal-detail-value">{selectedRide.calculatedDuration || selectedRide.duration || 'N/A'}</span>
+                      </div>
+                      <div className="bcRides-modal-detail-item">
+                        <span className="bcRides-modal-detail-label">Distance</span>
+                        <span className="bcRides-modal-detail-value">{selectedRide.distance ? `${selectedRide.distance} km` : 'N/A'}</span>
+                      </div>
+                      <div className="bcRides-modal-detail-item">
+                        <span className="bcRides-modal-detail-label">Vehicle</span>
+                        <span className="bcRides-modal-detail-value">{selectedRide.vehicle_type || 'Car'}</span>
+                      </div>
+                      <div className="bcRides-modal-detail-item">
+                        <span className="bcRides-modal-detail-label">Price per person</span>
+                        <span className="bcRides-modal-detail-value bcRides-modal-price">~₹{selectedRide.approxPrice}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Participants Section */}
+                <div className="bcRides-modal-section">
+                  <h3>Fellow Travelers ({rideDetails?.length || 0})</h3>
+                  {rideDetails && rideDetails.length > 0 ? (
+                    <div className="bcRides-modal-participants">
+                      {rideDetails.map((participant, index) => (
+                        <div key={participant.participant_id} className="bcRides-modal-participant">
+                          <div className="bcRides-modal-participant-avatar">
+                            <span>{participant.name.charAt(0).toUpperCase()}</span>
+                          </div>
+                          <div className="bcRides-modal-participant-info">
+                            <span className="bcRides-modal-participant-name">{participant.name}</span>
+                            <span className="bcRides-modal-participant-gender">{participant.gender}</span>
+                            <span className="bcRides-modal-participant-joined">
+                              Joined {new Date(participant.joined_at).toLocaleDateString()}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="bcRides-modal-no-participants">
+                      <p>No other participants yet. Be the first to join!</p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Action Buttons */}
+                <div className="bcRides-modal-actions">
+                  <button 
+                    className="bcRides-modal-request-btn"
+                    onClick={() => handleBookRide(selectedRide.id)}
+                    disabled={((selectedRide.seats || 4) - 1) - (selectedRide.seats_filled || 0) === 0}
+                  >
+                    {((selectedRide.seats || 4) - 1) - (selectedRide.seats_filled || 0) === 0 ? 'Fully Booked' : 'Request to Join'}
+                  </button>
+                  <button className="bcRides-modal-cancel-btn" onClick={closeModal}>
+                    Close
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
