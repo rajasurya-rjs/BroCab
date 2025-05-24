@@ -105,3 +105,9 @@ func getEnv(key, defaultVal string) string {
 	return defaultVal
 }
 
+// isTableExistsError checks if the error is related to an existing table
+func isTableExistsError(errMsg string) bool {
+	// Check for common "table already exists" error messages
+	return strings.Contains(errMsg, "already exists") ||
+		strings.Contains(errMsg, "relation") && strings.Contains(errMsg, "already exists")
+}
