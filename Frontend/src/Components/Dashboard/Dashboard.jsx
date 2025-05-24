@@ -1,6 +1,6 @@
 import React from 'react';
 import './Dashboard.css'; // Import Dashboard styles
-import Navbar from '../Navbar/Navbar.jsx'; // Import Navbar component (relative path)
+import Navbar from '../Navbar/Navbar'; // Import Navbar component
 
 // Background image constant
 const BACKGROUND_IMAGE = '/backgroundimg.png';
