@@ -15,7 +15,7 @@ const Navbar = () => {
       </div>
       <div className="bcDash-nav-auth">
         <button className="bcDash-login-btn" onClick={() => navigate('/login')}>Login</button>
-        <button className="bcDash-signup-btn">Signup</button>
+        <button className="bcDash-signup-btn" onClick={() => navigate('/signup')}>Signup</button>
       </div>
     </nav>
   );

@@ -1,16 +1,74 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-// CSS Styles as a separate object
+// SVG Background matching your hero section
+const BrocabHeroBackground = () => (
+  <svg
+    style={{
+      position: "absolute",
+      top: 0,
+      left: 0,
+      width: "100vw",
+      height: "100vh",
+      zIndex: 0,
+      pointerEvents: "none",
+      minHeight: "100vh",
+      minWidth: "100vw",
+    }}
+    viewBox="0 0 1440 900"
+    preserveAspectRatio="none"
+  >
+    <defs>
+      <linearGradient id="bg-gradient" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stopColor="#e2e4fa" />
+        <stop offset="100%" stopColor="#c7f4f7" />
+      </linearGradient>
+    </defs>
+    <rect width="1440" height="900" fill="url(#bg-gradient)" />
+    {/* Soft circle accents */}
+    <circle cx="220" cy="700" r="330" fill="#c7f4f7" opacity="0.45" />
+    <circle cx="1300" cy="120" r="210" fill="#d1ccfc" opacity="0.28" />
+    {/* Wavy white bottom */}
+    <path
+      d="M0,700 Q360,800 720,750 T1440,800 V900 H0 Z"
+      fill="#fff"
+      opacity="0.98"
+    />
+    {/* Dashed path */}
+    <path
+      d="M230,470 Q600,400 1200,650"
+      stroke="#6f42c1"
+      strokeWidth="13"
+      fill="none"
+      strokeDasharray="40 30"
+      strokeLinecap="round"
+    />
+    {/* Start pin */}
+    <g>
+      <circle cx="230" cy="470" r="28" fill="#6f42c1" />
+      <circle cx="230" cy="470" r="14" fill="#fff" />
+    </g>
+    {/* End pin */}
+    <g>
+      <circle cx="1200" cy="650" r="28" fill="#6f42c1" />
+      <circle cx="1200" cy="650" r="14" fill="#fff" />
+    </g>
+  </svg>
+);
+
+// Your original styles, but remove background from container
 const styles = {
   container: {
     minHeight: '100vh',
-    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+    width: '100vw',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
     padding: '20px',
     fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+    position: 'relative',
+    zIndex: 1,
+    overflow: 'hidden',
   },
   mainCard: {
     background: 'white',
@@ -22,6 +80,7 @@ const styles = {
     display: 'flex',
     minHeight: '500px',
     flexDirection: 'row',
+    zIndex: 1,
   },
   leftPanel: {
     flex: '1',
@@ -115,7 +174,6 @@ const styles = {
     fontSize: '13px',
     fontWeight: '600',
     color: '#1a1a1a',
-    
   },
   input: {
     width: '100%',
@@ -161,7 +219,6 @@ const styles = {
   rightPanelContent: {
     width: '100%',
     height: '100%',
-    background: `url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 600"><rect width="400" height="600" fill="%23f0f0f0"/><circle cx="200" cy="200" r="80" fill="%23667eea" opacity="0.3"/><rect x="150" y="300" width="100" height="60" rx="10" fill="%23764ba2" opacity="0.2"/><circle cx="120" cy="450" r="40" fill="%23667eea" opacity="0.2"/><circle cx="280" cy="380" r="30" fill="%23764ba2" opacity="0.3"/></svg>') center/cover`,
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
@@ -198,7 +255,6 @@ const styles = {
   },
 };
 
-// Icons
 const GoogleIcon = () => (
   <svg width="18" height="18" viewBox="0 0 24 24">
     <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -214,10 +270,10 @@ const CarIcon = () => (
   </svg>
 );
 
-// Login Form Component
 const LoginForm = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const navigate = useNavigate();
 
   const handleSubmit = e => {
     e.preventDefault();
@@ -235,19 +291,32 @@ const LoginForm = () => {
         <input style={styles.input} type="password" value={password} onChange={e => setPassword(e.target.value)} required />
       </div>
       <div style={styles.forgotPassword}>
-        <a href="#" style={styles.forgotPasswordLink}>Forgot your password?</a>
+        <a href="#" style={styles.forgotPasswordLink} onClick={e => { e.preventDefault(); navigate('/forgot-password'); }}>Forgot your password?</a>
       </div>
       <button type="submit" style={styles.loginButton}>Log in</button>
     </form>
   );
 };
 
-// Page Component
 const LoginPage = () => {
   const navigate = useNavigate();
+  // Animation state for slide-up
+  const [slideIn, setSlideIn] = React.useState(false);
+  React.useEffect(() => {
+    setTimeout(() => setSlideIn(true), 10);
+  }, []);
+
   return (
     <div style={styles.container}>
-      <div style={styles.mainCard}>
+      <BrocabHeroBackground />
+      <div
+        style={{
+          ...styles.mainCard,
+          transform: slideIn ? 'translateY(0)' : 'translateY(60px)',
+          opacity: slideIn ? 1 : 0,
+          transition: 'transform 0.5s cubic-bezier(.4,1.4,.6,1), opacity 0.5s',
+        }}
+      >
         <div style={styles.leftPanel}>
           <div style={styles.header}>
             <div style={styles.logo}>
@@ -270,6 +339,27 @@ const LoginPage = () => {
             <div style={styles.dividerLine}></div>
           </div>
           <LoginForm />
+          {/* Back button at the bottom */}
+          <button
+            type="button"
+            style={{
+              width: '100%',
+              marginTop: 18,
+              padding: '12px',
+              background: '#e5e5e5',
+              color: '#333',
+              border: 'none',
+              borderRadius: '12px',
+              fontSize: '15px',
+              fontWeight: 600,
+              cursor: 'pointer',
+              transition: 'background 0.2s',
+            }}
+            onClick={() => navigate('/')}
+            aria-label="Back to dashboard"
+          >
+            Back
+          </button>
         </div>
         <div style={styles.rightPanel}>
           <div style={styles.rightPanelContent}>
