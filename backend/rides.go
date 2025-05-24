@@ -117,14 +117,11 @@ func GetRidesJoinedByUser(c *gin.Context) {
 func FilterRides(c *gin.Context) {
 	origin := c.Query("origin")
 	destination := c.Query("destination")
-	date := c.Query("date") // format: YYYY-MM-DD
-
-	if origin == "" || destination == "" || date == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "origin, destination, and date are required"})
-		return
-	}
+	date := c.Query("date")
 
 	var rides []Ride
+
+	// Use SafeQuery to handle potential prepared statement conflicts
 	err := SafeQuery(func() error {
 		return DB.Where("origin = ? AND destination = ? AND date = ?", origin, destination, date).Find(&rides).Error
 	})

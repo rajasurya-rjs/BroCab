@@ -117,9 +117,10 @@ func InitDatabase() {
 	// Configure GORM based on connection type
 	var gormConfig *gorm.Config
 	if strings.Contains(connectionType, "Transaction Pooler") || strings.Contains(dsn, ":6543") {
-		// Transaction Pooler doesn't support prepared statements
+		// Transaction Pooler doesn't support prepared statements - DISABLE COMPLETELY
 		gormConfig = &gorm.Config{
-			PrepareStmt: false, // Required for Transaction Pooler
+			PrepareStmt:                              false, // Required for Transaction Pooler
+			DisableForeignKeyConstraintWhenMigrating: true,  // Avoid constraint conflicts
 			Logger: logger.New(
 				log.New(os.Stdout, "\r\n", log.LstdFlags),
 				logger.Config{
@@ -165,15 +166,17 @@ func InitDatabase() {
 
 	// Configure connection pool settings based on connection type
 	if strings.Contains(connectionType, "Transaction Pooler") {
-		// Optimized for stateless, short-lived connections
-		sqlDB.SetMaxOpenConns(10)                 // Lower for transaction pooler
-		sqlDB.SetMaxIdleConns(2)                  // Minimal idle connections
-		sqlDB.SetConnMaxLifetime(1 * time.Minute) // Short-lived connections
+		// Optimized for stateless, short-lived connections - maximum capacity
+		sqlDB.SetMaxOpenConns(200)                // Maximum for Transaction Pooler
+		sqlDB.SetMaxIdleConns(50)                 // High idle connections for quick reuse
+		sqlDB.SetConnMaxLifetime(5 * time.Minute) // Optimal lifetime for pooled connections
+		sqlDB.SetConnMaxIdleTime(1 * time.Minute) // Quick cleanup of unused connections
 	} else {
-		// Optimized for persistent connections
-		sqlDB.SetMaxOpenConns(25)
-		sqlDB.SetMaxIdleConns(5)
-		sqlDB.SetConnMaxLifetime(5 * time.Minute)
+		// Optimized for persistent connections - maximum capacity
+		sqlDB.SetMaxOpenConns(500)                 // Maximum for direct connections
+		sqlDB.SetMaxIdleConns(100)                 // High idle pool for performance
+		sqlDB.SetConnMaxLifetime(30 * time.Minute) // Longer lifetime for persistent connections
+		sqlDB.SetConnMaxIdleTime(10 * time.Minute) // Reasonable idle timeout
 	}
 
 	if err := sqlDB.Ping(); err != nil {
