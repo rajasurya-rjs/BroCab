@@ -39,8 +39,7 @@ func InitDatabase() {
 		if password == "" {
 			log.Fatal("❌ POSTGRES_PASSWORD environment variable is required for Supabase connection")
 		}
-
-		// Supabase connection string with SSL
+	// Supabase connection string with SSL
 		dsn = fmt.Sprintf(
 			"postgresql://%s:%s@%s:%s/%s?sslmode=require",
 			user, password, host, port, dbname,
