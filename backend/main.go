@@ -33,7 +33,7 @@ func main() {
 
 	// Configure CORS to allow frontend communication
 	r.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"http://localhost:3000", "http://localhost:5173", "http://127.0.0.1:3000", "http://127.0.0.1:5173","http://localhost:5174" },
+		AllowOrigins:     []string{"http://localhost:3000", "http://localhost:5173", "http://127.0.0.1:3000", "http://127.0.0.1:5173", "http://localhost:5174"},
 		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"},
 		AllowHeaders:     []string{"Origin", "Content-Length", "Content-Type", "Authorization", "Accept", "X-Requested-With"},
 		ExposeHeaders:    []string{"Content-Length"},
@@ -51,6 +51,8 @@ func main() {
 	protected.Use(FirebaseAuthMiddleware())
 
 	// User APIs
+	protected.GET("/user", GetCurrentUser)                                        // GET /user - Get current user profile
+	protected.PUT("/user", UpdateCurrentUser)                                     // PUT /user - Update current user profile
 	protected.POST("/user", CreateUser)                                           // POST /user
 	protected.GET("/user/:userID", GetUserBasic)                                  // GET /user/:userID
 	protected.GET("/user/rides/posted", GetRidesPostedByUser)                     // GET /user/rides/posted

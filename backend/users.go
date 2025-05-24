@@ -45,6 +45,30 @@ type CreateUserRequest struct {
 	Gender string `json:"gender"`
 }
 
+// Request body struct for updating user
+type UpdateUserRequest struct {
+	Name   string `json:"name"`
+	Phone  string `json:"phone"`
+	Gender string `json:"gender"`
+}
+
+// GET /user - Get current user's profile
+func GetCurrentUser(c *gin.Context) {
+	firebaseUID, exists := c.Get("uid")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	user, err := getUser(firebaseUID.(string))
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+		return
+	}
+
+	c.JSON(http.StatusOK, user)
+}
+
 // POST /user
 func CreateUser(c *gin.Context) {
 	var req CreateUserRequest
@@ -88,6 +112,56 @@ func CreateUser(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusCreated, newUser)
+}
+
+// PUT /user - Update current user's profile
+func UpdateCurrentUser(c *gin.Context) {
+	firebaseUID, exists := c.Get("uid")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	var req UpdateUserRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request data"})
+		return
+	}
+
+	// Get current user
+	user, err := getUser(firebaseUID.(string))
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+		return
+	}
+
+	// Update fields only if provided (non-empty)
+	updates := make(map[string]interface{})
+	if req.Name != "" {
+		updates["name"] = req.Name
+	}
+	if req.Phone != "" {
+		updates["phone"] = req.Phone
+	}
+	if req.Gender != "" {
+		updates["gender"] = req.Gender
+	}
+	updates["updated_at"] = time.Now()
+
+	// Perform update
+	if err := DB.Model(user).Updates(updates).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update user"})
+		return
+	}
+
+	// Return updated user
+	updatedUser, err := getUser(firebaseUID.(string))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve updated user"})
+		return
+	}
+
+	c.JSON(http.StatusOK, updatedUser)
 }
 
 // GET /user/:userID

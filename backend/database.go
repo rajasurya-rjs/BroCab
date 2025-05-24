@@ -117,9 +117,10 @@ func InitDatabase() {
 	// Configure GORM based on connection type
 	var gormConfig *gorm.Config
 	if strings.Contains(connectionType, "Transaction Pooler") || strings.Contains(dsn, ":6543") {
-		// Transaction Pooler doesn't support prepared statements
+		// Transaction Pooler doesn't support prepared statements - DISABLE COMPLETELY
 		gormConfig = &gorm.Config{
-			PrepareStmt: false, // Required for Transaction Pooler
+			PrepareStmt:                              false, // Required for Transaction Pooler
+			DisableForeignKeyConstraintWhenMigrating: true,  // Avoid constraint conflicts
 			Logger: logger.New(
 				log.New(os.Stdout, "\r\n", log.LstdFlags),
 				logger.Config{
