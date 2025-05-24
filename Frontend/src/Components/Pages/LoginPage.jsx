@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../firebase/AuthContext';
 
 // SVG Background matching your hero section
 const BrocabHeroBackground = () => (
@@ -273,27 +274,105 @@ const CarIcon = () => (
 const LoginForm = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState({});
   const navigate = useNavigate();
+  const { login } = useAuth();
 
-  const handleSubmit = e => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    alert(`Logging in with\nEmail: ${email}\nPassword: ${password}`);
+    setLoading(true);
+    setErrors({});
+
+    try {
+      await login(email, password);
+      // Redirect to dashboard on successful login
+      navigate('/dashboard');
+    } catch (error) {
+      console.error('Login error:', error);
+      switch (error.code) {
+        case 'auth/user-not-found':
+          setErrors({ email: 'No account found with this email' });
+          break;
+        case 'auth/wrong-password':
+          setErrors({ password: 'Incorrect password' });
+          break;
+        case 'auth/invalid-email':
+          setErrors({ email: 'Invalid email address' });
+          break;
+        case 'auth/user-disabled':
+          setErrors({ general: 'This account has been disabled' });
+          break;
+        case 'auth/too-many-requests':
+          setErrors({ general: 'Too many failed attempts. Please try again later' });
+          break;
+        default:
+          setErrors({ general: 'Login failed. Please try again.' });
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <form onSubmit={handleSubmit}>
+      {errors.general && (
+        <div style={{ color: '#e53e3e', marginBottom: '15px', fontSize: '14px' }}>
+          {errors.general}
+        </div>
+      )}
       <div style={styles.inputGroup}>
         <label style={styles.label}>Email</label>
-        <input style={styles.input} type="email" value={email} onChange={e => setEmail(e.target.value)} required />
+        <input 
+          style={{
+            ...styles.input,
+            borderColor: errors.email ? '#e53e3e' : '#e5e5e5'
+          }}
+          type="email" 
+          value={email} 
+          onChange={e => setEmail(e.target.value)} 
+          required
+          disabled={loading}
+        />
+        {errors.email && (
+          <div style={{ color: '#e53e3e', fontSize: '12px', marginTop: '3px' }}>
+            {errors.email}
+          </div>
+        )}
       </div>
       <div style={styles.inputGroup}>
         <label style={styles.label}>Password</label>
-        <input style={styles.input} type="password" value={password} onChange={e => setPassword(e.target.value)} required />
+        <input 
+          style={{
+            ...styles.input,
+            borderColor: errors.password ? '#e53e3e' : '#e5e5e5'
+          }}
+          type="password" 
+          value={password} 
+          onChange={e => setPassword(e.target.value)} 
+          required
+          disabled={loading}
+        />
+        {errors.password && (
+          <div style={{ color: '#e53e3e', fontSize: '12px', marginTop: '3px' }}>
+            {errors.password}
+          </div>
+        )}
       </div>
       <div style={styles.forgotPassword}>
         <a href="#" style={styles.forgotPasswordLink} onClick={e => { e.preventDefault(); navigate('/forgot-password'); }}>Forgot your password?</a>
       </div>
-      <button type="submit" style={styles.loginButton}>Log in</button>
+      <button 
+        type="submit" 
+        style={{
+          ...styles.loginButton,
+          opacity: loading ? 0.7 : 1,
+          cursor: loading ? 'not-allowed' : 'pointer'
+        }}
+        disabled={loading}
+      >
+        {loading ? 'Logging in...' : 'Log in'}
+      </button>
     </form>
   );
 };

@@ -334,7 +334,7 @@ const SignUpPage = () => {
     }
     try {
       // Create Firebase user
-      await signup(formData.email, formData.password, formData.name);
+      const userCredential = await signup(formData.email, formData.password, formData.name);
       // Prepare user data for backend
       const userData = {
         name: formData.name,
@@ -342,8 +342,8 @@ const SignUpPage = () => {
         phone: formData.phone,
         gender: formData.gender || undefined,
       };
-      // Create user profile in backend
-      await createUserProfile(userData);
+      // Create user profile in backend - pass userCredential for immediate token access
+      await createUserProfile(userData, userCredential);
       navigate("/login");
     } catch (error) {
       switch (error.code) {

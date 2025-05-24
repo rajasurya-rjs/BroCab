@@ -30,9 +30,9 @@ export function AuthProvider({ children }) {
   const signup = async (email, password, displayName) => {
     try {
       console.log("Firebase Auth initialized:", auth);
-      // console.log(auth , email , password)
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      console.log('blablacar', userCredential);
+      console.log('Firebase user created:', userCredential);
+      
       // Update the user's display name
       if (displayName) {
         await updateProfile(userCredential.user, { displayName });
@@ -110,15 +110,38 @@ export function AuthProvider({ children }) {
   };
 
   // Create user profile in backend
-  const createUserProfile = async (userData , user=null) => {
+  const createUserProfile = async (userData, userCredential = null) => {
     try {
-      const response = await apiCall('http://localhost:8080/user', {
+      // If userCredential is provided, get token directly from it
+      let token;
+      if (userCredential && userCredential.user) {
+        token = await userCredential.user.getIdToken();
+      } else {
+        token = await getIdToken();
+      }
+
+      const headers = {
+        'Content-Type': 'application/json',
+      };
+
+      if (token) {
+        headers.Authorization = `Bearer ${token}`;
+        console.log('AuthContext: Adding bearer token to request:', token.substring(0, 20) + '...');
+      } else {
+        throw new Error('No authentication token available');
+      }
+
+      console.log('AuthContext: Making API call to create user profile');
+
+      const response = await fetch('http://localhost:8080/user', {
         method: 'POST',
+        headers,
         body: JSON.stringify(userData),
       });
 
       if (!response.ok) {
-        throw new Error('Failed to create user profile');
+        const error = await response.json().catch(() => ({ error: 'Network error' }));
+        throw new Error(error.error || `HTTP error! status: ${response.status}`);
       }
 
       return await response.json();
