@@ -53,7 +53,7 @@ func CreateUser(c *gin.Context) {
 		return
 	}
 
-	firebaseUID, exists := c.Get("firebaseUID")
+	firebaseUID, exists := c.Get("uid")
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 		return
@@ -122,7 +122,7 @@ func GetRideLeader(c *gin.Context) {
 	}
 
 	var leader User
-	if err := DB.First(&leader, "firebase_uid = ?", ride.LeaderID).Error; err != nil {
+	if err := DB.First(&leader, "id = ?", ride.LeaderID).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Leader not found"})
 		return
 	}
@@ -138,36 +138,4 @@ func GetRideLeader(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, response)
-}
-
-// GET /ride/:rideID/users
-func GetUsersInRide(c *gin.Context) {
-	rideID := c.Param("rideID")
-
-	var participants []Participant
-	if err := DB.Where("ride_id = ?", rideID).Find(&participants).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch participants"})
-		return
-	}
-
-	type UserResponse struct {
-		Name   string `json:"name"`
-		Gender string `json:"gender"`
-	}
-
-	var users []UserResponse
-
-	for _, p := range participants {
-		user, err := getUser(p.UserID)
-		if err != nil {
-			continue // skip user if not found
-		}
-
-		users = append(users, UserResponse{
-			Name:   user.Name,
-			Gender: user.Gender,
-		})
-	}
-
-	c.JSON(http.StatusOK, users)
 }
