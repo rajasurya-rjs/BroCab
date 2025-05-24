@@ -1,0 +1,46 @@
+# Binaries and build output
+/bin/
+/build/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+
+# Go workspace file
+*.code-workspace
+
+# Dependency directories (remove the comment below if you use Go modules)
+/vendor/
+
+# Go module cache
+/go.sum
+
+# IDE/editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*.bak
+*~
+.DS_Store
+
+# OS generated files
+Thumbs.db
+
+# Sensitive files
+brocab-1c545-firebase-adminsdk-fbsvc-e3e6893c15.json
+.env
+
+# Logs
+*.log
+
+# Coverage files
+*.coverprofile
+*.cov
+*.coverage
+
+# Test binary
+*.test
