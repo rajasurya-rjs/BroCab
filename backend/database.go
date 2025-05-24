@@ -35,8 +35,8 @@ func InitDatabase() {
 	err = db.AutoMigrate(
 		&User{},
 		&Ride{},
-		&PrivilegeRequest{},
-		&RideParticipant{},
+		&Request{},
+		&Participant{},
 		&Notification{},
 	)
 	if err != nil {
@@ -45,7 +45,6 @@ func InitDatabase() {
 
 	fmt.Println("✅ Database migrated!")
 }
-
 
 func getEnv(key, defaultVal string) string {
 	if value, exists := os.LookupEnv(key); exists {

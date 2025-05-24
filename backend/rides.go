@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
@@ -31,13 +32,20 @@ func AddRide(c *gin.Context) {
 		return
 	}
 
-	userID, exists := c.Get("userID")
+	userID, exists := c.Get("uid")
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
 		return
 	}
 
-	ride.LeaderID = userID.(uint)
+	// Convert Firebase UID (string) to find the user's ID
+	user, err := getUser(userID.(string))
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+		return
+	}
+
+	ride.LeaderID = user.ID
 
 	if _, err := time.Parse("15:04", ride.Time); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid time format, expected HH:mm"})
@@ -61,10 +69,16 @@ func AddRide(c *gin.Context) {
 
 // GET /user/rides/posted
 func GetRidesPostedByUser(c *gin.Context) {
-	userID := c.MustGet("userID").(string)
+	userID := c.MustGet("uid").(string)
+
+	user, err := getUser(userID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+		return
+	}
 
 	var rides []Ride
-	if err := DB.Where("leader_id = ?", userID).Find(&rides).Error; err != nil {
+	if err := DB.Where("leader_id = ?", user.ID).Find(&rides).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch rides"})
 		return
 	}
@@ -74,10 +88,11 @@ func GetRidesPostedByUser(c *gin.Context) {
 
 // GET /user/rides/joined
 func GetRidesJoinedByUser(c *gin.Context) {
-	userID := c.MustGet("userID").(string)
+	userID := c.MustGet("uid").(string)
 
+	// Find all rides where user is actually a participant (not just approved)
 	var participants []Participant
-	if err := DB.Where("user_id = ? AND is_approved = true", userID).Find(&participants).Error; err != nil {
+	if err := DB.Where("user_id = ?", userID).Find(&participants).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch participant data"})
 		return
 	}
@@ -88,10 +103,86 @@ func GetRidesJoinedByUser(c *gin.Context) {
 	}
 
 	var rides []Ride
-	if err := DB.Where("id IN ?", rideIDs).Find(&rides).Error; err != nil {
+	if len(rideIDs) > 0 {
+		if err := DB.Where("id IN ?", rideIDs).Find(&rides).Error; err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch rides"})
+			return
+		}
+	}
+
+	c.JSON(http.StatusOK, rides)
+}
+
+// GET /rides/filter?origin=College Campus&destination=City Airport&date=2025-06-10
+func FilterRides(c *gin.Context) {
+	origin := c.Query("origin")
+	destination := c.Query("destination")
+	date := c.Query("date") // format: YYYY-MM-DD
+
+	if origin == "" || destination == "" || date == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "origin, destination, and date are required"})
+		return
+	}
+
+	var rides []Ride
+	if err := DB.Where("origin = ? AND destination = ? AND date = ?", origin, destination, date).Find(&rides).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch rides"})
 		return
 	}
 
 	c.JSON(http.StatusOK, rides)
+}
+
+// GET /rides/:rideID/requests
+func GetJoinRequestsForRide(c *gin.Context) {
+	rideIDParam := c.Param("rideID")
+	rideID, err := strconv.Atoi(rideIDParam)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ride ID"})
+		return
+	}
+
+	userID := c.MustGet("uid").(string)
+
+	var ride Ride
+	if err := DB.First(&ride, "id = ?", rideID).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Ride not found"})
+		return
+	}
+
+	user, err := getUser(userID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+		return
+	}
+
+	if ride.LeaderID != user.ID {
+		c.JSON(http.StatusForbidden, gin.H{"error": "You are not the leader of this ride"})
+		return
+	}
+
+	var requests []Request
+	if err := DB.Where("ride_id = ? AND status = ?", rideID, "pending").Find(&requests).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch join requests"})
+		return
+	}
+
+	// Build response with request details
+	var response []map[string]interface{}
+	for _, r := range requests {
+		user, err := getUser(r.UserID)
+		if err != nil {
+			continue // skip if user doesn't exist
+		}
+
+		entry := map[string]interface{}{
+			"request_id": r.ID,
+			"name":       user.Name,
+			"gender":     user.Gender,
+			"status":     r.Status,
+		}
+		response = append(response, entry)
+	}
+
+	c.JSON(http.StatusOK, response)
 }
