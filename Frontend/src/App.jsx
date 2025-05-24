@@ -4,6 +4,8 @@ import Dashboard from "./Components/Dashboard/Dashboard";
 import LoginPage from "./Components/Pages/LoginPage";
 import ForgotPasswordPage from "./Components/Pages/ForgotPasswordPage";
 import SignupPage from "./Components/Pages/SignUpPage";
+import Available_rides from "./Components/Available_rides/Available_rides"; // Add this import
+import Contact_us from "./Components/Contact_us/Contact_us";
 function App() {
   return (
     <BrowserRouter>
@@ -13,7 +15,8 @@ function App() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/signup" element={<SignupPage />} />
-
+        <Route path="/available-rides" element={<Available_rides />} />
+        <Route path="/contact-us" element={<Contact_us />} />
       </Routes>
     </BrowserRouter>
   );

@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom'; // Add this import
 import './Dashboard.css'; // Import Dashboard styles
 import Navbar from '../Navbar/Navbar'; // Import Navbar component
 
@@ -6,6 +7,44 @@ import Navbar from '../Navbar/Navbar'; // Import Navbar component
 const BACKGROUND_IMAGE = '/backgroundimg.png';
 
 const Dashboard = () => {
+  const navigate = useNavigate(); // Initialize navigate hook
+  
+  // State for form inputs
+  const [searchData, setSearchData] = useState({
+    pickup: '',
+    destination: '',
+    date: ''
+  });
+
+  // Handle input changes
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setSearchData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  // Handle search ride button click
+  const handleSearchRide = (e) => {
+    e.preventDefault();
+    
+    // Basic validation
+    if (!searchData.pickup || !searchData.destination || !searchData.date) {
+      alert('Please fill in all fields before searching');
+      return;
+    }
+
+    // Navigate to Available_rides page with search parameters
+    const searchParams = new URLSearchParams({
+      origin: searchData.pickup,
+      destination: searchData.destination,
+      date: searchData.date
+    });
+
+    navigate(`/available-rides?${searchParams.toString()}`);
+  };
+
   return (
     <div className="bcDash-container" style={{ backgroundImage: `url(${BACKGROUND_IMAGE})` }}>
       {/* Navigation Header */}
@@ -18,14 +57,18 @@ const Dashboard = () => {
           <h1 className="bcDash-hero-subtitle">Find your Crew.</h1>
 
           {/* Search Form */}
-          <div className="bcDash-search-form">
+          <form className="bcDash-search-form" onSubmit={handleSearchRide}>
             {/* Pickup Location */}
             <div className="bcDash-input-group">
               <div className="bcDash-location-dot bcDash-pickup-dot"></div>
               <input 
                 type="text" 
+                name="pickup"
                 placeholder="Enter pickup location" 
                 className="bcDash-location-input bcDash-pickup-input"
+                value={searchData.pickup}
+                onChange={handleInputChange}
+                required
               />
             </div>
             
@@ -34,8 +77,12 @@ const Dashboard = () => {
               <div className="bcDash-location-dot bcDash-destination-dot"></div>
               <input 
                 type="text" 
+                name="destination"
                 placeholder="Enter destination" 
                 className="bcDash-location-input bcDash-destination-input"
+                value={searchData.destination}
+                onChange={handleInputChange}
+                required
               />
             </div>
 
@@ -44,13 +91,20 @@ const Dashboard = () => {
               <div className="bcDash-date-dot"></div>
               <input 
                 type="date" 
+                name="date"
                 className="bcDash-location-input bcDash-date-input"
                 placeholder="Choose date"
+                value={searchData.date}
+                onChange={handleInputChange}
+                min={new Date().toISOString().split('T')[0]} // Prevent past dates
+                required
               />
             </div>
 
-            <button className="bcDash-search-btn">Search Ride</button>
-          </div>
+            <button type="submit" className="bcDash-search-btn">
+              Search Ride
+            </button>
+          </form>
         </div>
       </div>
 
