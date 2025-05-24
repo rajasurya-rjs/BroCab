@@ -17,8 +17,13 @@ const firebaseConfig = {
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 
-// Initialize Firebase Authentication and get a reference to the service
-export const auth = getAuth(app);
+// Initialize Firebase Authentication
+const auth = getAuth(app);
+auth.useDeviceLanguage(); // Set language to device default
+
+// Export auth instance
+export { auth };
+
 
 // Initialize Analytics (optional)
 export const analytics = getAnalytics(app);

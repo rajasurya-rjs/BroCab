@@ -29,8 +29,10 @@ export function AuthProvider({ children }) {
   // Sign up function
   const signup = async (email, password, displayName) => {
     try {
+      console.log("Firebase Auth initialized:", auth);
+      // console.log(auth , email , password)
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      
+      console.log('blablacar', userCredential);
       // Update the user's display name
       if (displayName) {
         await updateProfile(userCredential.user, { displayName });
@@ -108,7 +110,7 @@ export function AuthProvider({ children }) {
   };
 
   // Create user profile in backend
-  const createUserProfile = async (userData) => {
+  const createUserProfile = async (userData , user=null) => {
     try {
       const response = await apiCall('http://localhost:8080/user', {
         method: 'POST',

@@ -1,5 +1,7 @@
+// --- Real SignUpPage with working signup logic and form state ---
 import React, { useState, useRef } from "react";
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../firebase/AuthContext";
 
 // --- SVG Background Component ---
 const BrocabHeroBackground = () => (
@@ -56,7 +58,7 @@ const BrocabHeroBackground = () => (
   </svg>
 );
 
-// --- Your Existing Styles (unchanged except background removed from container) ---
+// --- Styles ---
 const styles = {
   container: {
     minHeight: "100vh",
@@ -71,7 +73,6 @@ const styles = {
     zIndex: 1,
     overflow: "hidden",
   },
-  // ... (rest of your styles as in your code)
   mainCard: {
     background: "white",
     borderRadius: "24px",
@@ -159,9 +160,12 @@ const styles = {
     borderRadius: "12px",
     fontSize: "15px",
     outline: "none",
-    transition: "border-color 0.2s, box-shadow 0.2s",
+    color: "#1e293b",
     boxSizing: "border-box",
     background: "#faf9ff",
+    boxShadow: "0 4px 16px 0 rgba(124, 58, 237, 0.08)",
+    transition:
+      "background 0.3s, box-shadow 0.3s, border-color 0.3s, transform 0.3s",
   }),
   inputFocused: {
     borderColor: "#7c6ee6",
@@ -252,293 +256,113 @@ const UserIcon = () => (
   </svg>
 );
 
-const validate = (form) => {
-  const errors = {};
-  if (!form.name.trim()) errors.name = "Name is required";
-  if (!form.email.match(/^\S+@\S+\.\S+$/)) errors.email = "Valid email required";
-  if (!form.password || form.password.length < 6)
-    errors.password = "Min 6 characters";
-  if (!form.phone.match(/^[6-9]\d{9}$/))
-    errors.phone = "Valid 10-digit Indian number";
-  if (!form.gender) errors.gender = "Select gender";
-  return errors;
-};
-
-const SignUpForm = () => {
-  const [form, setForm] = useState({
+// --- SignUpPage Component ---
+const SignUpPage = () => {
+  const navigate = useNavigate();
+  const { signup, createUserProfile } = useAuth();
+  const [formData, setFormData] = useState({
     name: "",
     email: "",
-    password: "",
     phone: "",
     gender: "",
+    password: ""
   });
-  const [focused, setFocused] = useState("");
   const [errors, setErrors] = useState({});
-  const [touched, setTouched] = useState({});
-  const [btnHover, setBtnHover] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [slideIn, setSlideIn] = useState(false);
+  React.useEffect(() => {
+    setTimeout(() => setSlideIn(true), 10);
+  }, []);
 
+  // Refs for keyboard navigation
   const nameRef = useRef(null);
   const emailRef = useRef(null);
   const passwordRef = useRef(null);
   const phoneRef = useRef(null);
   const genderRef = useRef(null);
+  const [focused, setFocused] = useState("");
+  const [touched, setTouched] = useState({});
+  const [btnHover, setBtnHover] = useState(false);
 
-  const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
-    setErrors({ ...errors, [e.target.name]: undefined });
+  // --- Validation ---
+  const validateForm = () => {
+    const newErrors = {};
+    if (!formData.name.trim()) newErrors.name = "Name is required";
+    if (!formData.email.trim()) newErrors.email = "Email is required";
+    else if (!/\S+@\S+\.\S+/.test(formData.email)) newErrors.email = "Invalid email format";
+    if (!formData.phone.trim()) newErrors.phone = "Phone number is required";
+    else if (!/^\d{10}$/.test(formData.phone.replace(/\D/g, ""))) newErrors.phone = "Phone number must be 10 digits";
+    if (!formData.password) newErrors.password = "Password is required";
+    else if (formData.password.length < 6) newErrors.password = "Password must be at least 6 characters";
+    return newErrors;
   };
+
+  // --- Handlers ---
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+    if (errors[name]) setErrors((prev) => ({ ...prev, [name]: "" }));
+  };
+
   const handleBlur = (e) => {
     setFocused("");
     setTouched({ ...touched, [e.target.name]: true });
     const field = e.target.name;
-    const fieldError = validate({ ...form, [field]: form[field] });
+    const fieldError = validateForm({ ...formData, [field]: formData[field] });
     setErrors({ ...errors, [field]: fieldError[field] });
   };
 
   const handleFocus = (field) => setFocused(field);
 
-  const handleSubmit = (e) => {
+  // --- Submit Handler ---
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    const errs = validate(form);
-    setErrors(errs);
+    setLoading(true);
+    setErrors({});
     setTouched({
       name: true,
       email: true,
       password: true,
       phone: true,
-      gender: true,
+      gender: true
     });
-    if (Object.keys(errs).length === 0) {
-      alert(
-        `Name: ${form.name}\nEmail: ${form.email}\nPassword: ${form.password}\nPhone: ${form.phone}\nGender: ${form.gender}`
-      );
+    const validationErrors = validateForm();
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
+      setLoading(false);
+      return;
+    }
+    try {
+      // Create Firebase user
+      await signup(formData.email, formData.password, formData.name);
+      // Prepare user data for backend
+      const userData = {
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone,
+        gender: formData.gender || undefined,
+      };
+      // Create user profile in backend
+      await createUserProfile(userData);
+      navigate("/login");
+    } catch (error) {
+      switch (error.code) {
+        case "auth/email-already-in-use":
+          setErrors({ email: "An account with this email already exists" });
+          break;
+        case "auth/invalid-email":
+          setErrors({ email: "Invalid email address" });
+          break;
+        case "auth/weak-password":
+          setErrors({ password: "Password is too weak" });
+          break;
+        default:
+          setErrors({ general: "Signup failed. Please try again." });
+      }
+    } finally {
+      setLoading(false);
     }
   };
-
-  return (
-    <form onSubmit={handleSubmit} autoComplete="off">
-      <div style={styles.inputGroup}>
-        <input
-          ref={nameRef}
-          style={{
-            ...styles.input(errors.name),
-            ...(focused === "name" ? styles.inputFocused : {}),
-          }}
-          id="name"
-          name="name"
-          type="text"
-          value={form.name}
-          onChange={handleChange}
-          onFocus={() => handleFocus("name")}
-          onBlur={handleBlur}
-          placeholder="Your name"
-          aria-invalid={!!errors.name}
-          aria-describedby="name-error"
-          autoComplete="off"
-          onKeyDown={e => {
-            if (e.key === "Enter") {
-              e.preventDefault();
-              emailRef.current && emailRef.current.focus();
-            }
-          }}
-        />
-        {touched.name && errors.name && (
-          <div style={styles.errorText} id="name-error">
-            {errors.name}
-          </div>
-        )}
-      </div>
-      <div style={styles.inputGroup}>
-        <input
-          ref={emailRef}
-          style={{
-            ...styles.input(errors.email),
-            ...(focused === "email" ? styles.inputFocused : {}),
-          }}
-          id="email"
-          name="email"
-          type="email"
-          value={form.email}
-          onChange={handleChange}
-          onFocus={() => handleFocus("email")}
-          onBlur={handleBlur}
-          placeholder="Email address"
-          aria-invalid={!!errors.email}
-          aria-describedby="email-error"
-          autoComplete="off"
-          onKeyDown={e => {
-            if (e.key === "Enter") {
-              e.preventDefault();
-              passwordRef.current && passwordRef.current.focus();
-            }
-          }}
-        />
-        {touched.email && errors.email && (
-          <div style={styles.errorText} id="email-error">
-            {errors.email}
-          </div>
-        )}
-      </div>
-      <div style={styles.inputGroup}>
-        <input
-          ref={passwordRef}
-          style={{
-            ...styles.input(errors.password),
-            ...(focused === "password" ? styles.inputFocused : {}),
-          }}
-          id="password"
-          name="password"
-          type="password"
-          value={form.password}
-          onChange={handleChange}
-          onFocus={() => handleFocus("password")}
-          onBlur={handleBlur}
-          placeholder="Password"
-          minLength={6}
-          aria-invalid={!!errors.password}
-          aria-describedby="password-error"
-          autoComplete="new-password"
-          onKeyDown={e => {
-            if (e.key === "Enter") {
-              e.preventDefault();
-              phoneRef.current && phoneRef.current.focus();
-            }
-          }}
-        />
-        {touched.password && errors.password && (
-          <div style={styles.errorText} id="password-error">
-            {errors.password}
-          </div>
-        )}
-      </div>
-      <div style={styles.inputGroup}>
-        <div style={{ display: "flex", alignItems: "center" }}>
-          <span
-            style={{
-              background: "#ede9fe",
-              color: "#667eea",
-              fontWeight: 600,
-              padding: "0 11px",
-              borderRadius: "6px 0 0 6px",
-              border: `2px solid ${errors.phone ? "#e53e3e" : "#e5e5e5"}`,
-              borderRight: "none",
-              height: "40px",
-              display: "flex",
-              alignItems: "center",
-              fontSize: "15px",
-              minWidth: "48px",
-              justifyContent: "center",
-            }}
-          >
-            +91
-          </span>
-          <input
-            ref={phoneRef}
-            style={{
-              ...styles.input(errors.phone),
-              borderRadius: "0 12px 12px 0",
-              borderLeft: "none",
-              flex: 1,
-              ...(focused === "phone" ? styles.inputFocused : {}),
-            }}
-            id="phone"
-            name="phone"
-            type="tel"
-            value={form.phone}
-            onChange={handleChange}
-            onFocus={() => handleFocus("phone")}
-            onBlur={handleBlur}
-            required
-            pattern="[6-9][0-9]{9}"
-            maxLength={10}
-            placeholder="Phone number (10 digits)"
-            title="Enter a valid 10-digit Indian mobile number"
-            aria-invalid={!!errors.phone}
-            aria-describedby="phone-error"
-            autoComplete="off"
-            onKeyDown={e => {
-              if (e.key === "Enter") {
-                e.preventDefault();
-                genderRef.current && genderRef.current.focus();
-              }
-            }}
-          />
-        </div>
-        {touched.phone && errors.phone && (
-          <div style={styles.errorText} id="phone-error">
-            {errors.phone}
-          </div>
-        )}
-      </div>
-      <div style={styles.inputGroup}>
-        <select
-          ref={genderRef}
-          style={{
-            ...styles.input(errors.gender),
-            ...(focused === "gender" ? styles.inputFocused : {}),
-          }}
-          id="gender"
-          name="gender"
-          value={form.gender}
-          onChange={handleChange}
-          onFocus={() => handleFocus("gender")}
-          onBlur={handleBlur}
-          aria-invalid={!!errors.gender}
-          aria-describedby="gender-error"
-          required
-          onKeyDown={e => {
-            if (e.key === "Enter") {
-              e.preventDefault();
-            }
-          }}
-        >
-          <option value="">Select gender</option>
-          <option value="male">Male</option>
-          <option value="female">Female</option>
-          <option value="other">Other</option>
-        </select>
-        {touched.gender && errors.gender && (
-          <div style={styles.errorText} id="gender-error">
-            {errors.gender}
-          </div>
-        )}
-      </div>
-      <button
-        type="submit"
-        style={{
-          ...styles.signupButton,
-          ...(btnHover ? styles.signupButtonHover : {}),
-        }}
-        onMouseEnter={() => setBtnHover(true)}
-        onMouseLeave={() => setBtnHover(false)}
-        aria-label="Sign Up"
-      >
-        Sign Up
-      </button>
-      <button
-        type="button"
-        style={{
-          ...styles.signupButton,
-          background: '#e5e5e5',
-          color: '#333',
-          marginTop: 8,
-        }}
-        onClick={() => window.location.assign('/')} // Go back to dashboard
-        aria-label="Back to Dashboard"
-      >
-        Back
-      </button>
-    </form>
-  );
-};
-
-const SignUpPage = () => {
-  const navigate = useNavigate();
-  // Animation state for slide-up
-  const [slideIn, setSlideIn] = React.useState(false);
-  React.useEffect(() => {
-    setTimeout(() => setSlideIn(true), 10);
-  }, []);
 
   return (
     <div style={styles.container}>
@@ -546,9 +370,9 @@ const SignUpPage = () => {
       <div
         style={{
           ...styles.mainCard,
-          transform: slideIn ? 'translateY(0)' : 'translateY(60px)',
+          transform: slideIn ? "translateY(0)" : "translateY(60px)",
           opacity: slideIn ? 1 : 0,
-          transition: 'transform 0.5s cubic-bezier(.4,1.4,.6,1), opacity 0.5s',
+          transition: "transform 0.5s cubic-bezier(.4,1.4,.6,1), opacity 0.5s",
         }}
       >
         <div style={styles.leftPanel}>
@@ -560,12 +384,12 @@ const SignUpPage = () => {
             <a
               href="#"
               style={styles.loginLink}
-              onClick={e => {
+              onClick={(e) => {
                 e.preventDefault();
-                window.location.assign('/login');
+                navigate("/login");
               }}
-              onMouseOver={e => (e.currentTarget.style.background = "#ede9fe")}
-              onMouseOut={e => (e.currentTarget.style.background = "transparent")}
+              onMouseOver={(e) => (e.currentTarget.style.background = "#ede9fe")}
+              onMouseOut={(e) => (e.currentTarget.style.background = "transparent")}
             >
               Log in
             </a>
@@ -574,9 +398,227 @@ const SignUpPage = () => {
             <h2 style={styles.title}>Create your account</h2>
             <p style={styles.subtitle}>Sign up to start sharing rides</p>
           </div>
-          <SignUpForm />
-          {/* Back button at the bottom */}
-          
+          <form onSubmit={handleSubmit} autoComplete="off">
+            {errors.general && (
+              <div style={{ color: "#e53e3e", marginBottom: 8 }}>
+                {errors.general}
+              </div>
+            )}
+            <div style={styles.inputGroup}>
+              <input
+                ref={nameRef}
+                style={{
+                  ...styles.input(errors.name),
+                  ...(focused === "name" ? styles.inputFocused : {}),
+                }}
+                id="name"
+                name="name"
+                type="text"
+                value={formData.name}
+                onChange={handleChange}
+                onFocus={() => handleFocus("name")}
+                onBlur={handleBlur}
+                placeholder="Your name"
+                aria-invalid={!!errors.name}
+                aria-describedby="name-error"
+                autoComplete="off"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    emailRef.current && emailRef.current.focus();
+                  }
+                }}
+              />
+              {touched.name && errors.name && (
+                <div style={styles.errorText} id="name-error">
+                  {errors.name}
+                </div>
+              )}
+            </div>
+            <div style={styles.inputGroup}>
+              <input
+                ref={emailRef}
+                style={{
+                  ...styles.input(errors.email),
+                  ...(focused === "email" ? styles.inputFocused : {}),
+                }}
+                id="email"
+                name="email"
+                type="email"
+                value={formData.email}
+                onChange={handleChange}
+                onFocus={() => handleFocus("email")}
+                onBlur={handleBlur}
+                placeholder="Email address"
+                aria-invalid={!!errors.email}
+                aria-describedby="email-error"
+                autoComplete="off"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    passwordRef.current && passwordRef.current.focus();
+                  }
+                }}
+              />
+              {touched.email && errors.email && (
+                <div style={styles.errorText} id="email-error">
+                  {errors.email}
+                </div>
+              )}
+            </div>
+            <div style={styles.inputGroup}>
+              <input
+                ref={passwordRef}
+                style={{
+                  ...styles.input(errors.password),
+                  ...(focused === "password" ? styles.inputFocused : {}),
+                }}
+                id="password"
+                name="password"
+                type="password"
+                value={formData.password}
+                onChange={handleChange}
+                onFocus={() => handleFocus("password")}
+                onBlur={handleBlur}
+                placeholder="Password"
+                minLength={6}
+                aria-invalid={!!errors.password}
+                aria-describedby="password-error"
+                autoComplete="new-password"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    phoneRef.current && phoneRef.current.focus();
+                  }
+                }}
+              />
+              {touched.password && errors.password && (
+                <div style={styles.errorText} id="password-error">
+                  {errors.password}
+                </div>
+              )}
+            </div>
+            <div style={styles.inputGroup}>
+              <div style={{ display: "flex", alignItems: "center" }}>
+                <span
+                  style={{
+                    background: "#ede9fe",
+                    color: "#667eea",
+                    fontWeight: 600,
+                    padding: "0 11px",
+                    borderRadius: "6px 0 0 6px",
+                    border: `2px solid ${errors.phone ? "#e53e3e" : "#e5e5e5"}`,
+                    borderRight: "none",
+                    height: "40px",
+                    display: "flex",
+                    alignItems: "center",
+                    fontSize: "15px",
+                    minWidth: "48px",
+                    justifyContent: "center",
+                  }}
+                >
+                  +91
+                </span>
+                <input
+                  ref={phoneRef}
+                  style={{
+                    ...styles.input(errors.phone),
+                    borderRadius: "0 12px 12px 0",
+                    borderLeft: "none",
+                    flex: 1,
+                    ...(focused === "phone" ? styles.inputFocused : {}),
+                  }}
+                  id="phone"
+                  name="phone"
+                  type="tel"
+                  value={formData.phone}
+                  onChange={handleChange}
+                  onFocus={() => handleFocus("phone")}
+                  onBlur={handleBlur}
+                  required
+                  pattern="[6-9][0-9]{9}"
+                  maxLength={10}
+                  placeholder="Phone number (10 digits)"
+                  title="Enter a valid 10-digit Indian mobile number"
+                  aria-invalid={!!errors.phone}
+                  aria-describedby="phone-error"
+                  autoComplete="off"
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      genderRef.current && genderRef.current.focus();
+                    }
+                  }}
+                />
+              </div>
+              {touched.phone && errors.phone && (
+                <div style={styles.errorText} id="phone-error">
+                  {errors.phone}
+                </div>
+              )}
+            </div>
+            <div style={styles.inputGroup}>
+              <select
+                ref={genderRef}
+                style={{
+                  ...styles.input(errors.gender),
+                  ...(focused === "gender" ? styles.inputFocused : {}),
+                }}
+                id="gender"
+                name="gender"
+                value={formData.gender}
+                onChange={handleChange}
+                onFocus={() => handleFocus("gender")}
+                onBlur={handleBlur}
+                aria-invalid={!!errors.gender}
+                aria-describedby="gender-error"
+                required
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                  }
+                }}
+              >
+                <option value="">Select gender</option>
+                <option value="male">Male</option>
+                <option value="female">Female</option>
+                <option value="other">Other</option>
+              </select>
+              {touched.gender && errors.gender && (
+                <div style={styles.errorText} id="gender-error">
+                  {errors.gender}
+                </div>
+              )}
+            </div>
+            <button
+              type="submit"
+              style={{
+                ...styles.signupButton,
+                ...(btnHover ? styles.signupButtonHover : {}),
+                opacity: loading ? 0.7 : 1,
+                cursor: loading ? "not-allowed" : "pointer",
+              }}
+              onMouseEnter={() => setBtnHover(true)}
+              onMouseLeave={() => setBtnHover(false)}
+              aria-label="Sign Up"
+              disabled={loading}
+            >
+              {loading ? "Creating Account..." : "Sign Up"}
+            </button>
+            <button
+              type="button"
+              style={{
+                ...styles.signupButton,
+                background: "#e5e5e5",
+                color: "#333",
+                marginTop: 8,
+              }}
+              onClick={() => navigate("/")}
+              aria-label="Back to Dashboard"
+            >
+              Back
+            </button>
+          </form>
         </div>
         <div style={styles.rightPanel}>
           <div style={styles.rightPanelContent}>
@@ -586,7 +628,8 @@ const SignUpPage = () => {
               </div>
               <h3 style={styles.featureTitle}>Join the Community</h3>
               <p style={styles.featureText}>
-                Connect with fellow students, share costs, reduce your carbon footprint, and make new friends on your journey.
+                Connect with fellow students, share costs, reduce your carbon
+                footprint, and make new friends on your journey...
               </p>
             </div>
           </div>

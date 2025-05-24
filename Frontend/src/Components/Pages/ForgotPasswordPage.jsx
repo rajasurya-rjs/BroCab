@@ -68,7 +68,6 @@ const styles = {
   input: {
     width: "100%",
     padding: "16px 20px",
-    border: "none",
     borderRadius: "18px",
     fontSize: "16px",
     fontWeight: 500,
