@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -61,15 +62,15 @@ func SendJoinRequest(c *gin.Context) {
 	// Check if a request already exists
 	var existing Request
 	if err := DB.Where("ride_id = ? AND user_id = ?", rideID, userID).First(&existing).Error; err == nil {
-		if existing.Status == "pending" {
+		if strings.Contains(strings.ToLower(existing.Status), "pending") {
 			c.JSON(http.StatusConflict, gin.H{"error": "Request already pending"})
 			return
 		}
-		if existing.Status == "approved" {
+		if strings.Contains(strings.ToLower(existing.Status), "approved") {
 			c.JSON(http.StatusConflict, gin.H{"error": "Already approved for this ride"})
 			return
 		}
-		if existing.Status == "revoked" {
+		if strings.Contains(strings.ToLower(existing.Status), "revoked") {
 			// Check if 30 minutes have passed since revocation
 			timeSinceRevoked := time.Since(existing.RevokedAt)
 			cooldownPeriod := 30 * time.Minute
@@ -117,9 +118,9 @@ func CancelJoinRequest(c *gin.Context) {
 
 	userID := c.MustGet("uid").(string)
 
-	// Find the pending request
+	// Find the pending request - using ILIKE for case insensitive matching
 	var request Request
-	if err := DB.Where("ride_id = ? AND user_id = ? AND status = ?", rideID, userID, "pending").First(&request).Error; err != nil {
+	if err := DB.Where("ride_id = ? AND user_id = ? AND status ILIKE ?", rideID, userID, "%pending%").First(&request).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "No pending request found for this ride"})
 		return
 	}
@@ -159,12 +160,12 @@ func GetUserSentRequests(c *gin.Context) {
 		}
 
 		// Determine if user can take action on this request
-		canCancel := req.Status == "pending"
-		canJoin := req.Status == "approved" && ride.SeatsFilled < ride.Seats
+		canCancel := strings.Contains(strings.ToLower(req.Status), "pending")
+		canJoin := strings.Contains(strings.ToLower(req.Status), "approved") && ride.SeatsFilled < ride.Seats
 
 		// Calculate cooldown for revoked requests
 		var cooldownInfo map[string]interface{}
-		if req.Status == "revoked" {
+		if strings.Contains(strings.ToLower(req.Status), "revoked") {
 			timeSinceRevoked := time.Since(req.RevokedAt)
 			cooldownPeriod := 30 * time.Minute
 			if timeSinceRevoked < cooldownPeriod {
@@ -222,23 +223,23 @@ func ClearInvolvementForDate(c *gin.Context) {
 		return
 	}
 
-	// Find all pending requests for rides on this date
+	// Find all pending requests for rides on this date - using ILIKE for case insensitive matching
 	var pendingRequestsForDate []Request
 	if err := DB.Table("requests").
 		Joins("JOIN rides ON requests.ride_id = rides.id").
-		Where("requests.user_id = ? AND requests.status = ? AND rides.date = ?",
-			userID, "pending", dateParam).
+		Where("requests.user_id = ? AND requests.status ILIKE ? AND rides.date = ?",
+			userID, "%pending%", dateParam).
 		Find(&pendingRequestsForDate).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch pending requests for date"})
 		return
 	}
 
-	// Find all approved privileges for rides on this date
+	// Find all approved privileges for rides on this date - using ILIKE for case insensitive matching
 	var approvedRequestsForDate []Request
 	if err := DB.Table("requests").
 		Joins("JOIN rides ON requests.ride_id = rides.id").
-		Where("requests.user_id = ? AND requests.status = ? AND rides.date = ?",
-			userID, "approved", dateParam).
+		Where("requests.user_id = ? AND requests.status ILIKE ? AND rides.date = ?",
+			userID, "%approved%", dateParam).
 		Find(&approvedRequestsForDate).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch privileges for date"})
 		return

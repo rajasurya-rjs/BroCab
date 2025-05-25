@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"os"
 	"strings"
 
 	firebase "firebase.google.com/go/v4"
@@ -17,7 +18,18 @@ var authClient *auth.Client
 
 // Initialize Firebase Admin SDK
 func InitFirebase() error {
-	opt := option.WithCredentialsFile("brocab-1c545-firebase-adminsdk-fbsvc-e3e6893c15.json")
+	var opt option.ClientOption
+
+	// Check if we're running in production (Render) with credentials in env var
+	firebaseCredentials := os.Getenv("FIREBASE_CREDENTIALS")
+	if firebaseCredentials != "" {
+		// Use credentials from environment variable
+		opt = option.WithCredentialsJSON([]byte(firebaseCredentials))
+	} else {
+		// Fallback to file for local development
+		opt = option.WithCredentialsFile("brocab-1c545-firebase-adminsdk-fbsvc-e3e6893c15.json")
+	}
+
 	app, err := firebase.NewApp(context.Background(), nil, opt)
 	if err != nil {
 		return fmt.Errorf("error initializing firebase app: %v", err)
