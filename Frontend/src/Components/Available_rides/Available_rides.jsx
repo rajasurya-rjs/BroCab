@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import './Available_rides.css';
 import Navbar from '../Navbar/Navbar';
+import { useAuth } from '../../firebase/AuthContext';
 
 const BACKGROUND_IMAGE = '/backgroundimg.png';
 
@@ -15,6 +16,9 @@ const Available_rides = () => {
   
   const location = useLocation();
   const navigate = useNavigate();
+  
+  // Use the auth context instead of manual token management
+  const { apiCall, currentUser } = useAuth();
 
   // Get initial search parameters from URL
   const urlParams = new URLSearchParams(location.search);
@@ -101,21 +105,21 @@ const Available_rides = () => {
     return Math.round(exactPrice / 10) * 10;
   };
 
-  // Function to fetch ride details and participants
+  // Function to fetch ride details and participants using auth context
   const fetchRideDetails = async (rideId) => {
     try {
       setLoadingDetails(true);
-      const response = await fetch(`http://localhost:8080/ride/${rideId}/participants`);
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      
+      const response = await apiCall(`http://localhost:8080/ride/${rideId}/participants`);
       const data = await response.json();
       setRideDetails(data);
     } catch (error) {
       console.error('Error fetching ride details:', error);
-      alert('Failed to load ride details. Please try again.');
+      if (error.message.includes('Session expired') || error.message.includes('Authentication failed')) {
+        alert('Session expired. Please login again.');
+        navigate('/login');
+      } else {
+        alert('Failed to load ride details. Please try again.');
+      }
     } finally {
       setLoadingDetails(false);
     }
@@ -139,6 +143,13 @@ const Available_rides = () => {
       return;
     }
 
+    // Check if user is authenticated
+    if (!currentUser) {
+      setError('Please login to search for rides.');
+      navigate('/login');
+      return;
+    }
+
     try {
       setLoading(true);
       setError(null);
@@ -153,26 +164,8 @@ const Available_rides = () => {
       const apiUrl = `http://localhost:8080/ride/filter?${apiParams.toString()}`;
       console.log('Making API call to:', apiUrl);
       
-      // Make API call with timeout
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10000);
-      
-      const response = await fetch(apiUrl, {
-        signal: controller.signal,
-        headers: {
-          'Content-Type': 'application/json',
-        }
-      });
-      
-      clearTimeout(timeoutId);
-      
-      if (!response.ok) {
-        if (response.status === 500) {
-          throw new Error('Server error. Please check your backend logs for details.');
-        }
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      
+      // Use the auth context's apiCall method
+      const response = await apiCall(apiUrl);
       const data = await response.json();
       console.log('API Response received:', data);
       
@@ -207,8 +200,9 @@ const Available_rides = () => {
       
     } catch (err) {
       console.error('Error fetching rides:', err);
-      if (err.name === 'AbortError') {
-        setError('Request timed out. Please try again.');
+      if (err.message.includes('Session expired') || err.message.includes('Authentication failed')) {
+        setError('Session expired. Please login again.');
+        navigate('/login');
       } else {
         setError(`Failed to fetch rides: ${err.message}`);
       }
@@ -216,7 +210,7 @@ const Available_rides = () => {
     } finally {
       setLoading(false);
     }
-  }, [searchForm.origin, searchForm.destination, searchForm.date]);
+  }, [searchForm.origin, searchForm.destination, searchForm.date, apiCall, currentUser, navigate]);
 
   // Use effect with proper dependency array
   useEffect(() => {
@@ -312,9 +306,30 @@ const Available_rides = () => {
     }
   };
 
-  const handleBookRide = (rideId) => {
-    console.log(`Booking ride with ID: ${rideId}`);
-    alert(`Booking ride ${rideId}. This will redirect to booking page.`);
+  const handleBookRide = async (rideId) => {
+    try {
+      console.log(`Booking ride with ID: ${rideId}`);
+      
+      // Use the auth context's apiCall method for booking
+      const response = await apiCall(`http://localhost:8080/ride/${rideId}/book`, {
+        method: 'POST'
+      });
+      
+      const result = await response.json();
+      alert(`Booking successful! ${result.message || 'You will be redirected to the booking page.'}`);
+      
+      // Refresh the rides list to update availability
+      fetchAvailableRides();
+      
+    } catch (error) {
+      console.error('Booking error:', error);
+      if (error.message.includes('Session expired') || error.message.includes('Authentication failed')) {
+        alert('Session expired. Please login again.');
+        navigate('/login');
+      } else {
+        alert('Booking failed. Please try again.');
+      }
+    }
   };
 
   const handleBackToSearch = () => {
@@ -329,6 +344,20 @@ const Available_rides = () => {
       day: 'numeric'
     });
   };
+
+  // Show login prompt if user is not authenticated
+  if (!currentUser) {
+    return (
+      <div className="bcRides-container" style={{ backgroundImage: `url(${BACKGROUND_IMAGE})` }}>
+        <Navbar />
+        <div className="bcRides-error">
+          <h2>Authentication Required</h2>
+          <p>Please login to search for rides.</p>
+          <button onClick={() => navigate('/login')} className="bcRides-back-btn">Go to Login</button>
+        </div>
+      </div>
+    );
+  }
 
   if (error) {
     return (
@@ -482,8 +511,10 @@ const Available_rides = () => {
 
                         <div className="bcRides-price-book">
                           <div className="bcRides-price-info">
-                            <span className="bcRides-price">~₹{ride.approxPrice || '0'}</span>
-                            <span className="bcRides-price-label">approx per person</span>
+                            <span className="bcRides-price">
+                              
+                              ₹{ride.approxPrice || '0'}</span>
+                            <span className="bcRides-price-label"> approx per person</span>
                           </div>
                           <button 
                             onClick={(e) => {
@@ -566,7 +597,7 @@ const Available_rides = () => {
                       </div>
                       <div className="bcRides-modal-detail-item">
                         <span className="bcRides-modal-detail-label">Price per person</span>
-                        <span className="bcRides-modal-detail-value bcRides-modal-price">~₹{selectedRide.approxPrice}</span>
+                        <span className="bcRides-modal-detail-value bcRides-modal-price">₹{selectedRide.approxPrice}</span>
                       </div>
                     </div>
                   </div>

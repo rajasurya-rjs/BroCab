@@ -179,8 +179,7 @@ export function AuthProvider({ children }) {
     console.log("getting token");
 
     let token = await getIdToken();
-    console.log(typeof(token))
-    console.log("got token ", token);
+
     if (token) {
       try {
         const response = await fetch("http://localhost:8080/user", {
