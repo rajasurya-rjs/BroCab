@@ -121,7 +121,7 @@ func FilterRides(c *gin.Context) {
 
 	var rides []Ride
 
-	// Use SafeQuery to handle potential prepared statement conflicts
+	// Use SafeQuery to handle potential prepared statement conflicts9AM
 	err := SafeQuery(func() error {
 		return DB.Where("origin = ? AND destination = ? AND date = ?", origin, destination, date).Find(&rides).Error
 	})

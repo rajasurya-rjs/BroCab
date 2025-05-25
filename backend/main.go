@@ -60,15 +60,16 @@ func main() {
 	protected.GET("/user/privileges", GetUserPrivileges)                          // GET /user/privileges
 	protected.GET("/user/notifications", GetUserNotifications)                    // GET /user/notifications
 	protected.GET("/user/notifications/unread-count", GetUnreadNotificationCount) // GET /user/notifications/unread-count
-	protected.DELETE("/user/cancel-ride/:rideID", CancelRideParticipation)        // DELETE /user/cancel-ride/:rideID
+	protected.DELETE("/user/cancel-ride/:rideID", CancelRideParticipation)        // DELETE /user/cancel-ride/:rideID (unified)
 
 	// Ride APIs
-	protected.POST("/ride", AddRide)                                 // POST /ride
-	protected.GET("/ride/:rideID/leader", GetRideLeader)             // GET /ride/:rideID/leader
-	r.GET("/ride/filter", FilterRides)                               // GET /rides/filter?origin=College Campus&destination=City Airport&date=2025-06-10
-	protected.GET("/ride/:rideID/requests", GetJoinRequestsForRide)  // GET /ride/:rideID/requests
-	protected.POST("/ride/:rideID/join", SendJoinRequest)            // POST /ride/:rideID/join
-	protected.POST("/ride/:rideID/join-ride", JoinRideWithPrivilege) // POST /ride/:rideID/join-ride
+	protected.POST("/ride", AddRide)                                    // POST /ride
+	protected.GET("/ride/:rideID/leader", GetRideLeader)                // GET /ride/:rideID/leader
+	r.GET("/ride/filter", FilterRides)                                  // GET /rides/filter?origin=College Campus&destination=City Airport&date=2025-06-10
+	protected.GET("/ride/:rideID/requests", GetJoinRequestsForRide)     // GET /ride/:rideID/requests
+	protected.POST("/ride/:rideID/join", SendJoinRequest)               // POST /ride/:rideID/join
+	protected.DELETE("/ride/:rideID/cancel-request", CancelJoinRequest) // DELETE /ride/:rideID/cancel-request
+	protected.POST("/ride/:rideID/join-ride", JoinRideWithPrivilege)    // POST /ride/:rideID/join-ride
 
 	// Participant Management APIs (Leaders only)
 	protected.GET("/ride/:rideID/participants", GetRideParticipants)                // GET /ride/:rideID/participants

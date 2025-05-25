@@ -15,7 +15,7 @@ type User struct {
 	Email       string    `gorm:"type:varchar(100);uniqueIndex;not null" json:"email"`
 	Phone       string    `gorm:"type:varchar(15);not null" json:"phone"`
 	Gender      string    `gorm:"type:varchar(10)" json:"gender,omitempty"`
-	FirebaseUID string    `gorm:"type:varchar(100);uniqueIndex;not null" json:"firebase_uid"`
+	FirebaseUID string    `gorm:"type:varchar(100);uniqueIndex;not null" json:"-"`
 	CreatedAt   time.Time `json:"created_at"`
 	UpdatedAt   time.Time `json:"updated_at"`
 }

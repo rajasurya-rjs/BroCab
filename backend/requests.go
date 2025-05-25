@@ -12,7 +12,7 @@ import (
 type Request struct {
 	ID        uint      `gorm:"primaryKey"`
 	RideID    uint      `gorm:"not null"`
-	UserID    string    `gorm:"not null"`
+	UserID    string    `gorm:"not null" json:"-"`
 	Status    string    `gorm:"not null"`     // "pending", "approved", or "revoked"
 	RevokedAt time.Time `gorm:"default:null"` // Used to check re-join cooldown
 	CreatedAt time.Time
@@ -76,4 +76,31 @@ func SendJoinRequest(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Join request sent"})
+}
+
+// DELETE /ride/:rideID/cancel-request - User cancels their pending join request
+func CancelJoinRequest(c *gin.Context) {
+	rideIDStr := c.Param("rideID")
+	rideID, err := strconv.Atoi(rideIDStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ride ID"})
+		return
+	}
+
+	userID := c.MustGet("uid").(string)
+
+	// Find the pending request
+	var request Request
+	if err := DB.Where("ride_id = ? AND user_id = ? AND status = ?", rideID, userID, "pending").First(&request).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "No pending request found for this ride"})
+		return
+	}
+
+	// Delete the pending request
+	if err := DB.Delete(&request).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to cancel request"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Join request cancelled successfully"})
 }

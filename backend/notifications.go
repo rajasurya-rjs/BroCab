@@ -10,7 +10,7 @@ import (
 // Notification represents a notification sent to a user
 type Notification struct {
 	ID        uint   `gorm:"primaryKey"`
-	UserID    string `gorm:"not null"` // Firebase UID of the recipient
+	UserID    string `gorm:"not null" json:"-"` // Firebase UID of the recipient - hidden from JSON
 	Title     string `gorm:"type:varchar(200);not null"`
 	Message   string `gorm:"type:text;not null"`
 	Type      string `gorm:"type:varchar(50);not null"` // "participant_removed", "ride_cancelled"
