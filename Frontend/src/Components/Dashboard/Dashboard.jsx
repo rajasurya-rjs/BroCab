@@ -45,6 +45,11 @@ const Dashboard = () => {
     navigate(`/available-rides?${searchParams.toString()}`);
   };
 
+  // Handle offer a seat button click
+  const handleOfferSeat = () => {
+    navigate('/post-ride');
+  };
+
   return (
     <div className="bcDash-container" style={{ backgroundImage: `url(${BACKGROUND_IMAGE})` }}>
       {/* Navigation Header */}
@@ -145,7 +150,12 @@ const Dashboard = () => {
             Got a cab ride planned? Post your route, find fellow passengers, and cut your 
             costs. Travel smarter, share the fare, and make every journey a little lighter.
           </p>
-          <button className="bcDash-offer-seat-btn">Offer a Seat</button>
+          <button 
+            className="bcDash-offer-seat-btn"
+            onClick={handleOfferSeat}
+          >
+            Offer a Seat
+          </button>
         </div>
       </footer>
     </div>

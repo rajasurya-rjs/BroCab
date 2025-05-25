@@ -176,11 +176,11 @@ export function AuthProvider({ children }) {
 
   // Fetch user details and set user name
   const fetchUserDetails = async () => {
-    console.log("getting token");
+    
 
     let token = await getIdToken();
     console.log(typeof(token))
-    console.log("got token ", token);
+   
     if (token) {
       try {
         const response = await fetch("http://localhost:8080/user", {
