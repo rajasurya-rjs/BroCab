@@ -6,6 +6,9 @@ import ForgotPasswordPage from "./Components/Pages/ForgotPasswordPage";
 import SignUpPage from "./Components/Pages/SignUpPage";
 import Available_rides from "./Components/Available_rides/Available_rides";
 import Contact_us from "./Components/Contact_us/Contact_us";
+import Privileges from "./Components/Privileges/Privileges";
+import Notifications from "./Components/Notifications/Notifications";
+import PostRidePage from "./Components/PostRide";
 function App() {
   return (
     <BrowserRouter>

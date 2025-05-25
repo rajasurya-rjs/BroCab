@@ -434,17 +434,16 @@ styleSheet.textContent = `
 document.head.appendChild(styleSheet);
 
 const PostRidePage = ({ onSubmit }) => {
-  const { currentUser, fetchUserDetails } = useAuth();
+  const { currentUser, fetchUserDetails, getIdToken } = useAuth(); // Added getIdToken from AuthContext
   const navigate = useNavigate();
   const [form, setForm] = useState({
-    leader: "",
     origin: "",
     destination: "",
     date: "",
     time: "",
-    seats: 0,
-    seats_filled: 0,
-    price: 0.00,
+    seats: "",
+    seats_filled: 1,
+    price: "",
   });
 
   const [success, setSuccess] = useState(false);
@@ -452,17 +451,33 @@ const PostRidePage = ({ onSubmit }) => {
   const [focusField, setFocusField] = useState("");
   const [hoverStates, setHoverStates] = useState({});
   const [errors, setErrors] = useState({});
+  const [rideDetails, setRideDetails] = useState(null); // To store ride details for the popup
 
   useEffect(() => {
     const fetchLeaderName = async () => {
-      if (currentUser) {
+      if (!currentUser) {
+        alert("Please log in before posting a ride.");
+        navigate("/login");
+        return;
+      }
+
+      try {
         const userData = await fetchUserDetails();
-        setForm((prev) => ({ ...prev, leader: userData.name }));
+        if (userData?.name) {
+          setForm((prev) => ({ ...prev, leader: userData.name }));
+        } else {
+          alert("Please log in before posting a ride.");
+          navigate("/login");
+        }
+      } catch (error) {
+        console.error("Failed to fetch leader name:", error);
+        alert("An error occurred. Please log in again.");
+        navigate("/login");
       }
     };
 
     fetchLeaderName();
-  }, [currentUser]);
+  }, [currentUser, fetchUserDetails, navigate]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -478,7 +493,7 @@ const PostRidePage = ({ onSubmit }) => {
     } else if (name === "price") {
       // Convert price to float
       setForm((prev) => ({ ...prev, [name]: parseFloat(value) || 0.0 }));
-    } else {
+    } else if(name !== "leader") {
       setForm((prev) => ({ ...prev, [name]: value }));
     }
 
@@ -514,13 +529,15 @@ const PostRidePage = ({ onSubmit }) => {
     setLoading(true);
 
     try {
-      const response = await fetch("http://localhost:8080/POST/ride", {
+      const response = await fetch("http://localhost:8080/ride", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          "Authorization": `Bearer ${await getIdToken()}`, // Use getIdToken from AuthContext
         },
         body: JSON.stringify({
           ...form,
+          leader: undefined, // Exclude leader name from the backend payload
           seats: parseInt(form.seats, 10), // Ensure seats is sent as an integer
           price: parseFloat(form.price),  // Ensure price is sent as a float
         }),
@@ -530,23 +547,28 @@ const PostRidePage = ({ onSubmit }) => {
         throw new Error("Failed to post ride.");
       }
 
+      setRideDetails({
+        origin: form.origin,
+        destination: form.destination,
+        date: form.date,
+        seats: form.seats,
+        price: form.price,
+      });
       setSuccess(true);
       setLoading(false);
 
       if (onSubmit) onSubmit(form);
 
-      setTimeout(() => {
-        setForm({
-          leader: currentUser?.displayName || "",
-          origin: "",
-          destination: "",
-          date: "",
-          time: "",
-          seats: "",
-          price: "",
-        });
-        setSuccess(false);
-      }, 3000);
+      setForm({
+        origin: "",
+        destination: "",
+        date: "",
+        time: "",
+        seats: "",
+        price: "",
+      });
+
+      navigate("/my-rides"); // Navigate to My Rides page after successful ride creation
     } catch (error) {
       alert(error.message);
       setLoading(false);
@@ -748,6 +770,60 @@ const PostRidePage = ({ onSubmit }) => {
           </div>
         </div>
       </div>
+
+      {/* Ride Details Popup */}
+      {rideDetails && (
+        <div style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          width: "100vw",
+          height: "100vh",
+          backgroundColor: "rgba(0, 0, 0, 0.6)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          zIndex: 1000,
+        }}>
+          <div style={{
+            backgroundColor: "#ffffff",
+            padding: "30px",
+            borderRadius: "15px",
+            textAlign: "center",
+            boxShadow: "0 8px 16px rgba(0, 0, 0, 0.2)",
+            maxWidth: "500px",
+            width: "90%",
+          }}>
+            <h2 style={{ color: "#4CAF50", marginBottom: "20px" }}>Ride Created Successfully!</h2>
+            <p style={{ fontSize: "16px", marginBottom: "10px" }}><strong>From:</strong> {rideDetails.origin}</p>
+            <p style={{ fontSize: "16px", marginBottom: "10px" }}><strong>To:</strong> {rideDetails.destination}</p>
+            <p style={{ fontSize: "16px", marginBottom: "10px" }}><strong>Date:</strong> {rideDetails.date}</p>
+            <p style={{ fontSize: "16px", marginBottom: "10px" }}><strong>Available Seats:</strong> {rideDetails.seats}</p>
+            <p style={{ fontSize: "16px", marginBottom: "20px" }}><strong>Price:</strong> ₹{rideDetails.price}</p>
+            <button
+              onClick={() => {
+                setRideDetails(null);
+                setSuccess(false); // Reset success state to change button color back
+              }}
+              style={{
+                padding: "12px 24px",
+                backgroundColor: "#4CAF50",
+                color: "#ffffff",
+                border: "none",
+                borderRadius: "8px",
+                cursor: "pointer",
+                fontSize: "16px",
+                fontWeight: "bold",
+                transition: "background-color 0.3s ease",
+              }}
+              onMouseEnter={(e) => (e.target.style.backgroundColor = "#45a049")}
+              onMouseLeave={(e) => (e.target.style.backgroundColor = "#4CAF50")}
+            >
+              OK
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
