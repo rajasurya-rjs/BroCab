@@ -129,6 +129,60 @@
   box-shadow: 0 6px 18px rgba(99, 102, 241, 0.35); /* Lighter shadow */
 }
 
+/* User name and dropdown menu styling */
+.bcDash-user-dropdown-wrapper {
+  position: relative;
+  display: inline-block;
+  cursor: pointer;
+}
+
+.bcDash-user-name {
+  padding: 8px 16px;
+  color: white;
+  background: #6366f1;
+  border-radius: 20px;
+  transition: background 0.2s;
+}
+
+.bcDash-user-name:hover {
+  background:#1f22ca;
+}
+
+.bcDash-user-dropdown {
+  position: absolute;
+  top: 110%;
+  right: 0;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.08);
+  min-width: 160px;
+  z-index: 100;
+  animation: fadeIn 0.2s;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-8px);}
+  to { opacity: 1; transform: translateY(0);}
+}
+
+.bcDash-dropdown-item {
+  display: block;
+  width: 100%;
+  padding: 12px 20px;
+  background: none;
+  border: none;
+  text-align: left;
+  font-size: 1rem;
+  color: #333;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.bcDash-dropdown-item:hover {
+  background: #f0f0f0;
+}
+
 /* Responsive Design for Navbar */
 @media (max-width: 1024px) {
   .bcDash-navbar {
@@ -186,6 +240,8 @@
   outline: 2px solid #6366f1;
   outline-offset: 2px;
 }
+
+
 
 /* High contrast mode support */
 @media (prefers-contrast: high) {
