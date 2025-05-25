@@ -17,8 +17,8 @@ const Available_rides = () => {
   const location = useLocation();
   const navigate = useNavigate();
   
-  // Use the auth context instead of manual token management
-  const { apiCall, currentUser } = useAuth();
+  // Use the auth context - get all needed functions at component level
+  const { apiCall, currentUser, getIdToken } = useAuth();
 
   // Get initial search parameters from URL
   const urlParams = new URLSearchParams(location.search);
@@ -306,28 +306,57 @@ const Available_rides = () => {
     }
   };
 
+  // CORRECTED handleBookRide function
   const handleBookRide = async (rideId) => {
     try {
-      console.log(`Booking ride with ID: ${rideId}`);
+      console.log(`Requesting to join ride with ID: ${rideId}`);
       
-      // Use the auth context's apiCall method for booking
-      const response = await apiCall(`http://localhost:8080/ride/${rideId}/book`, {
-        method: 'POST'
+      // Get the ID token using the hook function at component level
+      const token = await getIdToken();
+      
+      if (!token) {
+        throw new Error('No authentication token available');
+      }
+
+      // Make POST request to join the ride with Bearer token
+      const response = await fetch(`http://localhost:8080/ride/${rideId}/join`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
       });
-      
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          throw new Error('Authentication failed. Please login again.');
+        } else if (response.status === 400) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Bad request');
+        } else if (response.status === 409) {
+          throw new Error('You have already requested to join this ride');
+        }
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
       const result = await response.json();
-      alert(`Booking successful! ${result.message || 'You will be redirected to the booking page.'}`);
+      alert(`Join request sent successfully! ${result.message || 'You will be notified when the driver responds.'}`);
       
       // Refresh the rides list to update availability
       fetchAvailableRides();
       
+      // Close modal if open
+      if (selectedRide) {
+        closeModal();
+      }
+      
     } catch (error) {
-      console.error('Booking error:', error);
-      if (error.message.includes('Session expired') || error.message.includes('Authentication failed')) {
+      console.error('Join request error:', error);
+      if (error.message.includes('Authentication failed')) {
         alert('Session expired. Please login again.');
         navigate('/login');
       } else {
-        alert('Booking failed. Please try again.');
+        alert(`Failed to send join request: ${error.message}`);
       }
     }
   };
@@ -511,9 +540,7 @@ const Available_rides = () => {
 
                         <div className="bcRides-price-book">
                           <div className="bcRides-price-info">
-                            <span className="bcRides-price">
-                              
-                              ₹{ride.approxPrice || '0'}</span>
+                            <span className="bcRides-price">~₹{ride.approxPrice || '0'}</span>
                             <span className="bcRides-price-label"> approx per person</span>
                           </div>
                           <button 
@@ -597,7 +624,7 @@ const Available_rides = () => {
                       </div>
                       <div className="bcRides-modal-detail-item">
                         <span className="bcRides-modal-detail-label">Price per person</span>
-                        <span className="bcRides-modal-detail-value bcRides-modal-price">₹{selectedRide.approxPrice}</span>
+                        <span className="bcRides-modal-detail-value bcRides-modal-price">~₹{selectedRide.approxPrice}</span>
                       </div>
                     </div>
                   </div>

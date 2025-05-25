@@ -4,8 +4,13 @@ import Dashboard from "./Components/Dashboard/Dashboard";
 import LoginPage from "./Components/Pages/LoginPage";
 import ForgotPasswordPage from "./Components/Pages/ForgotPasswordPage";
 import SignUpPage from "./Components/Pages/SignUpPage";
-import Available_rides from "./Components/Available_rides/Available_rides"; // Add this import
+import Available_rides from "./Components/Available_rides/Available_rides";
 import Contact_us from "./Components/Contact_us/Contact_us";
+import Privileges from "./Components/Privileges/Privileges";
+import Notifications from "./Components/Notifications/Notifications";
+import PostRidePage from "./Components/PostRide";
+import Requested from "./Components/Requested/Requested";
+
 function App() {
   return (
     <BrowserRouter>
@@ -17,6 +22,10 @@ function App() {
         <Route path="/signup" element={<SignUpPage />} />
         <Route path="/available-rides" element={<Available_rides />} />
         <Route path="/contact-us" element={<Contact_us />} />
+        <Route path="/privileges" element={<Privileges />} />
+        <Route path="/notifications" element={<Notifications />} />
+        <Route path="/post-ride" element={<PostRidePage />} />
+        <Route path="/requested" element={<Requested/>}/>
       </Routes>
     </BrowserRouter>
   );

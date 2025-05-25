@@ -1,0 +1,349 @@
+/* Main Container */
+.bcRequested-container {
+  min-height: 100vh;
+  width: 100%;
+  position: relative;
+  background-size: cover;
+  background-position: center center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+  display: flex;
+  flex-direction: column;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  color: #1e293b;
+}
+
+.bcRequested-main-content {
+  flex: 1;
+  padding: 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+/* Header Section */
+.bcRequested-header {
+  text-align: center;
+  margin-bottom: 30px;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(8px);
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+}
+
+.bcRequested-header h1 {
+  font-size: 32px;
+  font-weight: 700;
+  color: #1e293b;
+  margin-bottom: 8px;
+}
+
+.bcRequested-header p {
+  font-size: 16px;
+  color: #64748b;
+  margin: 0;
+}
+
+/* Results Info */
+.bcRequested-results-info {
+  margin-bottom: 20px;
+}
+
+.bcRequested-results-count {
+  font-size: 18px;
+  font-weight: 700;
+  color: #1e293b;
+  background: rgba(255, 255, 255, 0.9);
+  padding: 12px 20px;
+  border-radius: 12px;
+  backdrop-filter: blur(4px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+/* Loading State */
+.bcRequested-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 40vh;
+  gap: 20px;
+}
+
+.bcRequested-spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid rgba(99, 102, 241, 0.2);
+  border-left: 4px solid #6366f1;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.bcRequested-loading p {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+/* Error and No Rides States */
+.bcRequested-error,
+.bcRequested-no-rides {
+  text-align: center;
+  padding: 60px 20px;
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(6px);
+  border-radius: 20px;
+  margin: 40px auto;
+  max-width: 500px;
+}
+
+.bcRequested-no-rides-icon {
+  font-size: 64px;
+  margin-bottom: 20px;
+}
+
+.bcRequested-error h2,
+.bcRequested-no-rides h3 {
+  font-size: 24px;
+  font-weight: 700;
+  color: #1e293b;
+  margin-bottom: 12px;
+}
+
+.bcRequested-error p,
+.bcRequested-no-rides p {
+  color: #64748b;
+  margin-bottom: 24px;
+  line-height: 1.6;
+}
+
+.bcRequested-retry-btn {
+  padding: 12px 24px;
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.bcRequested-retry-btn:hover {
+  background: linear-gradient(135deg, #5856eb 0%, #7c3aed 100%);
+  transform: translateY(-2px);
+}
+
+/* Requests List */
+.bcRequested-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.bcRequested-card {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(8px);
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  transition: all 0.3s;
+}
+
+.bcRequested-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+}
+
+.bcRequested-card-content {
+  display: grid;
+  grid-template-columns: 2fr 1.5fr 1fr;
+  gap: 24px;
+  align-items: center;
+}
+
+/* Time and Route */
+.bcRequested-time-route {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.bcRequested-time-info {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.bcRequested-departure-time,
+.bcRequested-arrival-time {
+  font-size: 18px;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.bcRequested-duration {
+  font-size: 14px;
+  color: #64748b;
+  font-weight: 500;
+  padding: 4px 8px;
+  background: #f1f5f9;
+  border-radius: 6px;
+}
+
+.bcRequested-route-text {
+  font-size: 14px;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.bcRequested-distance {
+  color: #6366f1;
+}
+
+.bcRequested-date {
+  font-size: 13px;
+  color: #64748b;
+  font-weight: 500;
+  margin-top: 4px;
+  display: block;
+}
+
+/* Status and Details */
+.bcRequested-details {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.bcRequested-status-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.bcRequested-status {
+  font-size: 12px;
+  font-weight: 600;
+  color: white;
+  padding: 4px 8px;
+  border-radius: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  width: fit-content;
+}
+
+.bcRequested-vehicle-type {
+  font-size: 14px;
+  font-weight: 600;
+  color: #6366f1;
+  background: rgba(99, 102, 241, 0.1);
+  padding: 4px 8px;
+  border-radius: 6px;
+  width: fit-content;
+}
+
+.bcRequested-request-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.bcRequested-requested-date {
+  font-size: 12px;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.bcRequested-price {
+  font-size: 18px;
+  font-weight: 700;
+  color: #6366f1;
+}
+
+/* Actions */
+.bcRequested-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+.bcRequested-cancel-btn {
+  padding: 10px 20px;
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.bcRequested-cancel-btn:hover {
+  background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+.bcRequested-approved-text {
+  font-size: 14px;
+  font-weight: 600;
+  color: #10b981;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.bcRequested-rejected-text {
+  font-size: 14px;
+  font-weight: 600;
+  color: #ef4444;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .bcRequested-main-content {
+    padding: 16px;
+  }
+
+  .bcRequested-card-content {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .bcRequested-actions {
+    justify-content: center;
+  }
+
+  .bcRequested-time-info {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+}
+
+@media (max-width: 480px) {
+  .bcRequested-header {
+    padding: 16px;
+  }
+
+  .bcRequested-card {
+    padding: 16px;
+  }
+
+  .bcRequested-header h1 {
+    font-size: 24px;
+  }
+}
