@@ -103,7 +103,7 @@ export const userAPI = {
     return response.json();
   },
 
-  // Cancel ride participation
+  // Cancel ride participation (unified - handles both pending requests and participation)
   cancelRide: async (rideID) => {
     const response = await apiCall(`/user/cancel-ride/${rideID}`, {
       method: 'DELETE',
@@ -145,6 +145,14 @@ export const rideAPI = {
   sendJoinRequest: async (rideID) => {
     const response = await apiCall(`/ride/${rideID}/join`, {
       method: 'POST',
+    });
+    return response.json();
+  },
+
+  // Cancel pending join request
+  cancelJoinRequest: async (rideID) => {
+    const response = await apiCall(`/ride/${rideID}/cancel-request`, {
+      method: 'DELETE',
     });
     return response.json();
   },

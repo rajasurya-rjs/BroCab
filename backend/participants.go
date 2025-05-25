@@ -13,13 +13,13 @@ import (
 type Participant struct {
 	ID        uint      `gorm:"primaryKey"`
 	RideID    uint      `gorm:"not null"`
-	UserID    string    `gorm:"not null"` // Firebase UID
+	UserID    string    `gorm:"not null" json:"-"` // Firebase UID - hidden from JSON
 	JoinedAt  time.Time `gorm:"default:CURRENT_TIMESTAMP"`
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }
 
-// GET /ride/:rideID/participants - Get all participants in a ride (for leaders)
+// GET /ride/:rideID/participants - Get all participants in a ride (accessible to anyone)
 func GetRideParticipants(c *gin.Context) {
 	rideIDParam := c.Param("rideID")
 	rideID, err := strconv.Atoi(rideIDParam)
@@ -28,28 +28,14 @@ func GetRideParticipants(c *gin.Context) {
 		return
 	}
 
-	userID := c.MustGet("uid").(string)
-
-	// Check if the user is the leader of this ride
+	// Check if the ride exists
 	var ride Ride
 	if err := DB.First(&ride, "id = ?", rideID).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Ride not found"})
 		return
 	}
 
-	// Get user to find their ID for comparison
-	user, err := getUser(userID)
-	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
-		return
-	}
-
-	if ride.LeaderID != user.ID {
-		c.JSON(http.StatusForbidden, gin.H{"error": "You are not the leader of this ride"})
-		return
-	}
-
-	// Fetch all participants for the ride
+	// Fetch all participants for the ride (no leader check - accessible to anyone)
 	var participants []Participant
 	if err := DB.Where("ride_id = ?", rideID).Find(&participants).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch participants"})
@@ -66,10 +52,8 @@ func GetRideParticipants(c *gin.Context) {
 
 		entry := map[string]interface{}{
 			"participant_id": p.ID,
-			"user_id":        p.UserID,
 			"name":           user.Name,
 			"gender":         user.Gender,
-			"phone":          user.Phone,
 			"joined_at":      p.JoinedAt,
 		}
 		response = append(response, entry)
@@ -189,6 +173,15 @@ func ApproveJoinRequest(c *gin.Context) {
 	if err := DB.Model(&request).Update("status", "approved").Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to approve request"})
 		return
+	}
+
+	// Send notification to the approved user
+	title := "Join Request Approved"
+	message := fmt.Sprintf("Your request to join the ride from %s to %s on %s at %s has been approved. You can now join the ride!",
+		ride.Origin, ride.Destination, ride.Date, ride.Time)
+	if err := createNotification(request.UserID, title, message, "request_approved", uint(rideID)); err != nil {
+		// Log error but don't fail the request
+		fmt.Printf("Failed to create notification: %v\n", err)
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Join request approved - user can now join the ride"})
@@ -352,7 +345,7 @@ func JoinRideWithPrivilege(c *gin.Context) {
 	})
 }
 
-// DELETE /user/cancel-ride/:rideID - User cancels their participation in a ride
+// DELETE /user/cancel-ride/:rideID - Unified function to cancel either pending request or participation
 func CancelRideParticipation(c *gin.Context) {
 	rideIDParam := c.Param("rideID")
 	rideID, err := strconv.Atoi(rideIDParam)
@@ -363,14 +356,29 @@ func CancelRideParticipation(c *gin.Context) {
 
 	userID := c.MustGet("uid").(string)
 
-	// Find the participant record
-	var participant Participant
-	if err := DB.Where("ride_id = ? AND user_id = ?", rideID, userID).First(&participant).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "You are not a participant in this ride"})
+	// First check if user has a pending request
+	var pendingRequest Request
+	if err := DB.Where("ride_id = ? AND user_id = ? AND status = ?", rideID, userID, "pending").First(&pendingRequest).Error; err == nil {
+		// User has a pending request - cancel it (no notification needed)
+		if err := DB.Delete(&pendingRequest).Error; err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to cancel request"})
+			return
+		}
+		c.JSON(http.StatusOK, gin.H{
+			"message": "Join request cancelled successfully",
+			"type":    "request_cancelled",
+		})
 		return
 	}
 
-	// Get ride details for notification
+	// Check if user is actually a participant
+	var participant Participant
+	if err := DB.Where("ride_id = ? AND user_id = ?", rideID, userID).First(&participant).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "You have no involvement with this ride"})
+		return
+	}
+
+	// User is a participant - proceed with cancellation and notify leader
 	var ride Ride
 	if err := DB.First(&ride, "id = ?", rideID).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Ride not found"})
@@ -407,10 +415,13 @@ func CancelRideParticipation(c *gin.Context) {
 	title := "Participant Cancelled"
 	message := fmt.Sprintf("%s has cancelled their participation in your ride from %s to %s on %s at %s",
 		cancellingUser.Name, ride.Origin, ride.Destination, ride.Date, ride.Time)
-	if err := createNotification(leader.FirebaseUID, title, message, "ride_cancelled", uint(rideID)); err != nil {
+	if err := createNotification(leader.FirebaseUID, title, message, "participant_cancelled", uint(rideID)); err != nil {
 		// Log error but don't fail the request
 		fmt.Printf("Failed to create notification: %v\n", err)
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Successfully cancelled your participation in the ride"})
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Successfully cancelled your participation in the ride",
+		"type":    "participation_cancelled",
+	})
 }
