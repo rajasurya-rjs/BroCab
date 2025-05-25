@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"time"
 
 	"net/http"
@@ -204,4 +205,107 @@ func GetJoinRequestsForRide(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, response)
+}
+
+// DELETE /ride/:rideID - Leader deletes their own ride
+func DeleteRide(c *gin.Context) {
+	rideIDParam := c.Param("rideID")
+	rideID, err := strconv.Atoi(rideIDParam)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ride ID"})
+		return
+	}
+
+	userID := c.MustGet("uid").(string)
+
+	// Get the ride to be deleted
+	var ride Ride
+	if err := DB.First(&ride, "id = ?", rideID).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Ride not found"})
+		return
+	}
+
+	// Get current user to verify they are the leader
+	user, err := getUser(userID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+		return
+	}
+
+	// Check if the current user is the leader of this ride
+	if ride.LeaderID != user.ID {
+		c.JSON(http.StatusForbidden, gin.H{"error": "You are not the leader of this ride"})
+		return
+	}
+
+	// Get all participants to notify them
+	var participants []Participant
+	if err := DB.Where("ride_id = ?", rideID).Find(&participants).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch participants"})
+		return
+	}
+
+	// Start a transaction to ensure data consistency
+	tx := DB.Begin()
+	if tx.Error != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to start transaction"})
+		return
+	}
+
+	// Delete all related data in the correct order to avoid foreign key constraints
+
+	// 1. Delete all notifications related to this ride
+	if err := tx.Where("ride_id = ?", rideID).Delete(&Notification{}).Error; err != nil {
+		tx.Rollback()
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete ride notifications"})
+		return
+	}
+
+	// 2. Delete all participants
+	if err := tx.Where("ride_id = ?", rideID).Delete(&Participant{}).Error; err != nil {
+		tx.Rollback()
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete participants"})
+		return
+	}
+
+	// 3. Delete all join requests
+	if err := tx.Where("ride_id = ?", rideID).Delete(&Request{}).Error; err != nil {
+		tx.Rollback()
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete join requests"})
+		return
+	}
+
+	// 4. Finally delete the ride itself
+	if err := tx.Delete(&ride).Error; err != nil {
+		tx.Rollback()
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete ride"})
+		return
+	}
+
+	// Commit the transaction
+	if err := tx.Commit().Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to commit transaction"})
+		return
+	}
+
+	// Send notifications to all participants about the ride cancellation
+	title := "Ride Cancelled by Leader"
+	message := fmt.Sprintf("The ride from %s to %s on %s at %s has been cancelled by the leader %s",
+		ride.Origin, ride.Destination, ride.Date, ride.Time, user.Name)
+
+	notificationCount := 0
+	for _, participant := range participants {
+		if err := createNotification(participant.UserID, title, message, "ride_cancelled", uint(rideID)); err != nil {
+			// Log error but don't fail the request
+			fmt.Printf("Failed to create notification for participant %s: %v\n", participant.UserID, err)
+		} else {
+			notificationCount++
+		}
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message":               fmt.Sprintf("Ride deleted successfully. %d participants have been notified.", notificationCount),
+		"participants_notified": notificationCount,
+		"ride_id":               rideID,
+	})
 }

@@ -30,10 +30,9 @@ const Requested = () => {
       }
 
       // Make API call with proper headers including Bearer token
-      const response = await fetch('http://localhost:8080/user/requests', {
+      const response = await fetch('https://brocab.onrender.com/user/requests', {
         method: 'GET',
         headers: {
-          'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         }
       });
@@ -80,7 +79,7 @@ const Requested = () => {
         throw new Error('No authentication token available');
       }
 
-      const cancelUrl = `http://localhost:8080/ride/${rideId}/cancel-request`;
+      const cancelUrl = `https://brocab.onrender.com/ride/${rideId}/cancel-request`;
       console.log('Cancel request URL:', cancelUrl);
 
       const response = await fetch(cancelUrl, {

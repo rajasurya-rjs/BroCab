@@ -66,6 +66,7 @@ func main() {
 
 	// Ride APIs
 	protected.POST("/ride", AddRide)                                    // POST /ride
+	protected.DELETE("/ride/:rideID", DeleteRide)                       // DELETE /ride/:rideID - Leader deletes their ride
 	protected.GET("/ride/:rideID/leader", GetRideLeader)                // GET /ride/:rideID/leader
 	r.GET("/ride/filter", FilterRides)                                  // GET /rides/filter?origin=College Campus&destination=City Airport&date=2025-06-10
 	protected.GET("/ride/:rideID/requests", GetJoinRequestsForRide)     // GET /ride/:rideID/requests
