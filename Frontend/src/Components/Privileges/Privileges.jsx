@@ -29,7 +29,7 @@ const Privileges = () => {
       }
 
       // API call to get user privileges
-      const response = await fetch('http://localhost:8080/user/privileges', {
+      const response = await fetch('https://brocab.onrender.com/user/privileges', {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -71,7 +71,7 @@ const Privileges = () => {
         throw new Error('No authentication token available');
       }
 
-      const response = await fetch(`http://localhost:8080/ride/${rideId}/confirm`, {
+      const response = await fetch(`https://brocab.onrender.com/ride/${rideId}/confirm`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -113,7 +113,7 @@ const Privileges = () => {
         throw new Error('No authentication token available');
       }
 
-      const response = await fetch(`http://localhost:8080/ride/${rideId}/decline`, {
+      const response = await fetch(`https://brocab.onrender.com/ride/${rideId}/decline`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

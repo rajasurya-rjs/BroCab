@@ -31,7 +31,7 @@ const Notifications = () => {
         throw new Error('No authentication token available');
       }
 
-      const response = await fetch('http://localhost:8080/user/notifications', {
+      const response = await fetch('https://brocab.onrender.com/user/notifications', {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -41,7 +41,7 @@ const Notifications = () => {
 
       if (!response.ok) {
         if (response.status === 401) {
-          throw new Error('Autfor every http://localhost:8080, replace it withh https://brocab.onrender.com as my backend is hosted on thishentication failed. Please login again.');
+          throw new Error('Authentication failed. Please login again.');
         }
         throw new Error(`HTTP error! status: ${response.status}`);
       }
@@ -85,7 +85,7 @@ const Notifications = () => {
         throw new Error('No authentication token available');
       }
 
-      const response = await fetch(`http://localhost:8080/notification/${notificationId}/read`, {
+      const response = await fetch(`https://brocab.onrender.com/notification/${notificationId}/read`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

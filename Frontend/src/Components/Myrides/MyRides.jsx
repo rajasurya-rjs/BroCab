@@ -35,7 +35,7 @@ const MyRides = () => {
         throw new Error('No authentication token available');
       }
 
-      const response = await fetch('http://localhost:8080/user/rides/posted', {
+      const response = await fetch('https://brocab.onrender.com/user/rides/posted', {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -76,7 +76,7 @@ const MyRides = () => {
         throw new Error('No authentication token available');
       }
 
-      const response = await fetch(`http://localhost:8080/ride/${rideId}/participants`, {
+      const response = await fetch(`https://brocab.onrender.com/ride/${rideId}/participants`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -108,7 +108,7 @@ const MyRides = () => {
         throw new Error('No authentication token available');
       }
 
-      const response = await fetch(`http://localhost:8080/ride/${rideId}/requests`, {
+      const response = await fetch(`https://brocab.onrender.com/ride/${rideId}/requests`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -155,7 +155,7 @@ const MyRides = () => {
         throw new Error('No authentication token available');
       }
 
-      const response = await fetch(`http://localhost:8080/ride/${selectedRide.id || selectedRide.leader_id}/participant/${participantId}`, {
+      const response = await fetch(`https://brocab.onrender.com/ride/${selectedRide.id || selectedRide.leader_id}/participant/${participantId}`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
@@ -186,7 +186,7 @@ const MyRides = () => {
         throw new Error('No authentication token available');
       }
 
-      const response = await fetch(`http://localhost:8080/ride/${selectedRide.id || selectedRide.leader_id}/approve/${requestId}`, {
+      const response = await fetch(`https://brocab.onrender.com/ride/${selectedRide.id || selectedRide.leader_id}/approve/${requestId}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -217,7 +217,7 @@ const MyRides = () => {
         throw new Error('No authentication token available');
       }
 
-      const response = await fetch(`http://localhost:8080/ride/${selectedRide.id || selectedRide.leader_id}/reject/${requestId}`, {
+      const response = await fetch(`https://brocab.onrender.com/ride/${selectedRide.id || selectedRide.leader_id}/reject/${requestId}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -251,7 +251,7 @@ const MyRides = () => {
         throw new Error('No authentication token available');
       }
 
-      const response = await fetch(`http://localhost:8080/ride/${rideId}`, {
+      const response = await fetch(`https://brocab.onrender.com/ride/${rideId}`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
