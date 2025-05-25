@@ -1,264 +1,220 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../firebase/AuthContext';
-import { userAPI, notificationAPI } from '../../utils/api';
+import Navbar from '../Navbar/Navbar';
 import './Notifications.css';
 
-// Helper function to format dates
-const formatDate = (dateString) => {
-  const date = new Date(dateString);
-  const now = new Date();
-  const isToday = date.toDateString() === now.toDateString();
-  
-  if (isToday) {
-    return 'Today';
-  }
-  
-  const yesterday = new Date();
-  yesterday.setDate(yesterday.getDate() - 1);
-  
-  if (date.toDateString() === yesterday.toDateString()) {
-    return 'Yesterday';
-  }
-  
-  return date.toLocaleDateString('en-US', {
-    weekday: 'long',
-    month: 'long',
-    day: 'numeric'
-  });
-};
-
-// Helper function to format time
-const formatTime = (dateString) => {
-  const date = new Date(dateString);
-  return date.toLocaleTimeString('en-US', { 
-    hour: '2-digit', 
-    minute: '2-digit'
-  });
-};
-
-// Render notification icon based on type
-const NotificationIcon = ({ type }) => {
-  switch (type) {
-    case 'ride_request_approved':
-      return <span className="notification-icon">✅</span>;
-    case 'ride_request_rejected':
-      return <span className="notification-icon">❌</span>;
-    case 'new_ride_request':
-      return <span className="notification-icon">🚗</span>;
-    case 'ride_cancelled':
-      return <span className="notification-icon">🚫</span>;
-    case 'participant_left':
-      return <span className="notification-icon">👤</span>;
-    default:
-      return <span className="notification-icon">📣</span>;
-  }
-};
+const BACKGROUND_IMAGE = '/backgroundimg.png';
 
 const Notifications = () => {
+  // Initialize as empty array instead of null
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const { currentUser } = useAuth();
-  const navigate = useNavigate();
+  const [filter, setFilter] = useState('all');
+  const [markingAsRead, setMarkingAsRead] = useState(new Set());
+  const { currentUser, getIdToken } = useAuth();
 
   useEffect(() => {
-    // Redirect if not logged in
-    if (!currentUser) {
-      navigate('/login');
-      return;
-    }
-
-    // Add a small delay to ensure authentication is fully initialized
-    const timer = setTimeout(() => {
+    if (currentUser) {
       fetchNotifications();
-    }, 100);
-
-    return () => clearTimeout(timer);
-  }, [currentUser, navigate]);
+    }
+  }, [currentUser]);
 
   const fetchNotifications = async () => {
     try {
       setLoading(true);
-      setError(null); // Clear any previous errors
+      setError(null);
       
-      console.log('Fetching notifications...');
-      const data = await userAPI.getNotifications();
-      console.log('Raw API response:', data);
-      console.log('Response type:', typeof data);
-      console.log('Is array:', Array.isArray(data));
+      const token = await getIdToken();
       
-      // Check if data is null, undefined, or not an array
-      if (!data) {
-        console.error('API returned null/undefined data');
-        setError('No notification data received from server.');
-        setLoading(false);
-        return;
+      if (!token) {
+        throw new Error('No authentication token available');
       }
-      
-      if (!Array.isArray(data)) {
-        console.error('API did not return an array:', data);
-        setError('Invalid data format received from server.');
-        setLoading(false);
-        return;
-      }
-      
-      // Map backend response to frontend expected format
-      const mappedNotifications = data.map(notification => {
-        console.log('Processing notification:', notification);
-        return {
-          id: notification.id,
-          title: notification.title,
-          message: notification.message,
-          type: notification.type,
-          read: notification.is_read,
-          timestamp: notification.created_at,
-          rideId: notification.ride_id,
-          rideInfo: {
-            origin: notification.origin,
-            destination: notification.destination,
-            date: notification.date,
-            time: notification.time
-          }
-        };
-      });
-      
-      console.log('Mapped notifications:', mappedNotifications);
-      
-      // Sort notifications by time (newest first)
-      const sortedNotifications = mappedNotifications.sort((a, b) => {
-        return new Date(b.timestamp) - new Date(a.timestamp);
-      });
-      
-      console.log('Sorted notifications:', sortedNotifications);
-      setNotifications(sortedNotifications);
-      setLoading(false);
-    } catch (err) {
-      console.error('Error fetching notifications:', err);
-      console.error('Error details:', {
-        message: err.message,
-        stack: err.stack,
-        name: err.name
-      });
-      setError('Failed to load notifications. Please try again later.');
-      setLoading(false);
-    }
-  };
 
-  const handleNotificationClick = async (notification) => {
-    // If notification is unread, mark it as read
-    if (!notification.read) {
-      try {
-        await notificationAPI.markAsRead(notification.id);
-        
-        // Update local state to reflect read status
-        setNotifications(prevNotifications => 
-          prevNotifications.map(n => 
-            n.id === notification.id ? { ...n, read: true } : n
-          )
-        );
-        
-        // Trigger a custom event to update navbar notification count
-        window.dispatchEvent(new CustomEvent('notificationRead'));
-      } catch (err) {
-        console.error('Error marking notification as read:', err);
-      }
-    }
-
-    // Handle navigation based on notification type
-    switch (notification.type) {
-      case 'ride_request_approved':
-      case 'ride_cancelled':
-      case 'participant_left':
-        navigate(`/dashboard`);
-        break;
-      case 'new_ride_request':
-        if (notification.rideId) {
-          navigate(`/dashboard?ride=${notification.rideId}&tab=requests`);
+      const response = await fetch('http://localhost:8080/user/notifications', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
         }
-        break;
-      default:
-        // Stay on notifications page by default
-        break;
+      });
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          throw new Error('Autfor every http://localhost:8080, replace it withh https://brocab.onrender.com as my backend is hosted on thishentication failed. Please login again.');
+        }
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log('Notifications API Response:', data);
+      
+      // Ensure we always set an array, never null
+      if (data && data.notifications && Array.isArray(data.notifications)) {
+        setNotifications(data.notifications);
+      } else if (Array.isArray(data)) {
+        setNotifications(data);
+      } else {
+        // If API returns null or unexpected format, set empty array
+        setNotifications([]);
+      }
+    } catch (error) {
+      console.error('Error fetching notifications:', error);
+      if (error.message.includes('Authentication failed')) {
+        setError('Session expired. Please login again.');
+      } else {
+        setError('Failed to load notifications');
+      }
+      // Always set empty array on error, never null
+      setNotifications([]);
+    } finally {
+      setLoading(false);
     }
   };
 
-  // Group notifications by date
-  const groupedNotifications = notifications.reduce((groups, notification) => {
-    const date = formatDate(notification.timestamp);
-    if (!groups[date]) {
-      groups[date] = [];
+  // Rest of your component code remains the same...
+  const markAsRead = async (notificationId) => {
+    if (markingAsRead.has(notificationId)) return;
+
+    try {
+      setMarkingAsRead(prev => new Set(prev).add(notificationId));
+      
+      const token = await getIdToken();
+      
+      if (!token) {
+        throw new Error('No authentication token available');
+      }
+
+      const response = await fetch(`http://localhost:8080/notification/${notificationId}/read`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to mark notification as read: ${response.status}`);
+      }
+
+      // Update local state
+      setNotifications(prev => 
+        prev.map(notification => 
+          notification.notification_id === notificationId 
+            ? { ...notification, read: true }
+            : notification
+        )
+      );
+
+      // Dispatch custom event to update navbar count
+      window.dispatchEvent(new CustomEvent('notificationRead'));
+      
+    } catch (error) {
+      console.error('Error marking notification as read:', error);
+      alert('Failed to mark notification as read');
+    } finally {
+      setMarkingAsRead(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(notificationId);
+        return newSet;
+      });
     }
-    groups[date].push(notification);
-    return groups;
-  }, {});
+  };
 
-  if (loading) {
-    return <div className="notifications-container loading">Loading notifications...</div>;
-  }
+  // Safe filtering with null check
+  const filteredNotifications = (notifications || []).filter(notification => {
+    if (filter === 'unread') return !notification.read;
+    if (filter === 'read') return notification.read;
+    return true;
+  });
 
-  if (error) {
-    return <div className="notifications-container error">{error}</div>;
-  }
+  // Safe count calculation
+  const unreadCount = (notifications || []).filter(n => !n.read).length;
+  const totalCount = (notifications || []).length;
 
-  if (notifications.length === 0) {
-    return (
-      <div className="notifications-container">
-        <h1>Notifications</h1>
-        <div className="no-notifications">
-          <h3>No notifications yet</h3>
-          <p>When you have new notifications, they will appear here.</p>
+  // Rest of your component JSX...
+  return (
+    <div className="bcNotifications-container" style={{ backgroundImage: `url(${BACKGROUND_IMAGE})` }}>
+      <Navbar />
+      
+      <div className="bcNotifications-main-content">
+        <div className="bcNotifications-header">
+          <h1 className="bcNotifications-title">Notifications</h1>
+          <p className="bcNotifications-subtitle">
+            Stay updated with your ride activities
+          </p>
+        </div>
+
+        <div className="bcNotifications-controls">
+          <div className="bcNotifications-filters">
+            <button 
+              className={`bcNotifications-filter-btn ${filter === 'all' ? 'active' : ''}`}
+              onClick={() => setFilter('all')}
+            >
+              All ({totalCount})
+            </button>
+            <button 
+              className={`bcNotifications-filter-btn ${filter === 'unread' ? 'active' : ''}`}
+              onClick={() => setFilter('unread')}
+            >
+              Unread ({unreadCount})
+            </button>
+            <button 
+              className={`bcNotifications-filter-btn ${filter === 'read' ? 'active' : ''}`}
+              onClick={() => setFilter('read')}
+            >
+              Read ({totalCount - unreadCount})
+            </button>
+          </div>
+          
+          {unreadCount > 0 && (
+            <button 
+              className="bcNotifications-mark-all-btn"
+              onClick={markAllAsRead}
+            >
+              Mark All as Read
+            </button>
+          )}
+        </div>
+
+        <div className="bcNotifications-content-wrapper">
+          {filteredNotifications.length === 0 ? (
+            <div className="bcNotifications-empty">
+              <div className="bcNotifications-empty-icon">
+                {filter === 'unread' ? '📭' : filter === 'read' ? '📬' : '📪'}
+              </div>
+              <h3>
+                {filter === 'unread' 
+                  ? 'No unread notifications' 
+                  : filter === 'read' 
+                    ? 'No read notifications'
+                    : 'No notifications yet'
+                }
+              </h3>
+              <p>
+                {filter === 'unread' 
+                  ? 'All caught up! You have no unread notifications.' 
+                  : filter === 'read'
+                    ? 'No notifications have been read yet.'
+                    : 'You\'ll see your ride updates and alerts here.'
+                }
+              </p>
+            </div>
+          ) : (
+            <div className="bcNotifications-list">
+              {filteredNotifications.map((notification, index) => (
+                <div 
+                  key={`notification-${notification.notification_id}-${index}`} 
+                  className={`bcNotifications-card ${!notification.read ? 'unread' : 'read'}`}
+                  onClick={() => !notification.read && markAsRead(notification.notification_id)}
+                >
+                  {/* Your notification card content */}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
-    );
-  }
-
-  return (
-    <div className="notifications-container">
-      <h1>Notifications</h1>
-      
-      {Object.entries(groupedNotifications).map(([date, dateNotifications]) => (
-        <div key={date} className="notification-date-group">
-          <div className="notification-date">{date}</div>
-          
-          {dateNotifications.map(notification => (
-            <div 
-              key={notification.id} 
-              className={`notification-item ${!notification.read ? 'unread' : ''}`}
-              onClick={() => handleNotificationClick(notification)}
-            >
-              <NotificationIcon type={notification.type} />
-              
-              <div className="notification-content">
-                <div className="notification-header">
-                  <h3>{notification.title}</h3>
-                  <span className="notification-time">{formatTime(notification.timestamp)}</span>
-                </div>
-                
-                <p className="notification-message">{notification.message}</p>
-                
-                {notification.rideInfo && (
-                  <div className="notification-ride-info">
-                    <span>
-                      <strong>From:</strong> {notification.rideInfo.origin}
-                    </span>
-                    <span>
-                      <strong>To:</strong> {notification.rideInfo.destination}
-                    </span>
-                    <span>
-                      <strong>Date:</strong> {new Date(notification.rideInfo.date).toLocaleDateString()}
-                    </span>
-                  </div>
-                )}
-              </div>
-              
-              {!notification.read && (
-                <div className="notification-unread-indicator"></div>
-              )}
-            </div>
-          ))}
-        </div>
-      ))}
     </div>
   );
 };

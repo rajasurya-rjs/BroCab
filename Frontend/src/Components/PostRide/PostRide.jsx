@@ -799,7 +799,7 @@ const PostRidePage = ({ onSubmit }) => {
                 e.preventDefault();
                 setRideDetails(null);
                 setSuccess(false);
-                navigate("/my-rides");
+                navigate("/my-booked-rides");
               }}
               style={{
                 padding: "12px 24px",

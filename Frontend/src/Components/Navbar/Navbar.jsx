@@ -34,7 +34,7 @@ const Navbar = () => {
       clearInterval(intervalId);
       window.removeEventListener('notificationRead', handleNotificationRead);
     };
-  }, []);
+  }, [currentUser, fetchUserDetails]);
   
   const fetchUnreadCount = async () => {
     try {
@@ -50,10 +50,23 @@ const Navbar = () => {
     setShowDropdown(false);
   };
 
-  const handleSignOut = () => {
-    logout();
+  const handleMyRides = () => {
+    navigate('/my-rides');
     setShowDropdown(false);
-    navigate('/login');
+  };
+
+  const handleSignOut = async () => {
+    try {
+      await logout();
+      setShowDropdown(false);
+      localStorage.clear();
+      sessionStorage.clear();
+      navigate('/login');
+    } catch (error) {
+      console.error('Error signing out:', error);
+      setShowDropdown(false);
+      navigate('/login');
+    }
   };
 
   const handleBrandClick = () => {
@@ -62,6 +75,18 @@ const Navbar = () => {
     } else {
       navigate('/dashboard');
     }
+  };
+
+  // Add delay to prevent flickering
+  const handleMouseEnter = () => {
+    setShowDropdown(true);
+  };
+
+  const handleMouseLeave = () => {
+    // Add a small delay before closing to prevent flickering
+    setTimeout(() => {
+      setShowDropdown(false);
+    }, 100);
   };
 
   return (
@@ -74,12 +99,11 @@ const Navbar = () => {
       </div>
       
       <div className="bcDash-nav-links">
-        {/* Updated My Rides button to navigate to MyBookedRides */}
         <button 
           onClick={() => navigate('/my-booked-rides')} 
           className="bcDash-nav-link bcDash-nav-button"
         >
-          My Rides
+          My Bookings
         </button>
         <button 
           onClick={() => navigate('/privileges')}
@@ -114,8 +138,8 @@ const Navbar = () => {
             </button>
             <div 
               className="bcDash-user-dropdown-wrapper"
-              onMouseEnter={() => setShowDropdown(true)}
-              onMouseLeave={() => setShowDropdown(false)}
+              onMouseEnter={handleMouseEnter}
+              onMouseLeave={handleMouseLeave}
             >
               <div className="bcDash-profile-icon">
                 <span className="bcDash-profile-initial">
@@ -123,7 +147,14 @@ const Navbar = () => {
                 </span>
               </div>
               {showDropdown && (
-                <div className="bcDash-user-dropdown">
+                <div 
+                  className="bcDash-user-dropdown"
+                  onMouseEnter={() => setShowDropdown(true)}
+                  onMouseLeave={handleMouseLeave}
+                >
+                  <button onClick={handleMyRides} className="bcDash-dropdown-item">
+                    My Rides
+                  </button>
                   <button onClick={handleUpdateProfile} className="bcDash-dropdown-item">
                     Update Profile
                   </button>
