@@ -71,7 +71,7 @@ const Privileges = () => {
         throw new Error('No authentication token available');
       }
 
-      const response = await fetch(`https://brocab.onrender.com/ride/${rideId}/confirm`, {
+      const response = await fetch(`https://brocab.onrender.com/ride/${rideId}/join-ride`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

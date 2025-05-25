@@ -57,7 +57,6 @@ const BrocabHeroBackground = () => (
   </svg>
 );
 
-// Your original styles, but remove background from container
 const styles = {
   container: {
     minHeight: '100vh',
@@ -77,17 +76,17 @@ const styles = {
     boxShadow: '0 25px 50px rgba(0, 0, 0, 0.25)',
     overflow: 'hidden',
     width: '100%',
-    maxWidth: '800px', // Match SignUpPage max width
+    maxWidth: '800px',
     display: 'flex',
-    minHeight: '420px', // Match SignUpPage min height
+    minHeight: '420px',
     flexDirection: 'row',
     zIndex: 1,
-    margin: '10px', // Reduced margin
-    border: '1px solid rgba(0, 0, 0, 0.1)', // Reduced border thickness
+    margin: '10px',
+    border: '1px solid rgba(0, 0, 0, 0.1)',
   },
   leftPanel: {
     flex: '1',
-    padding: '36px 30px', // Match SignUpPage padding
+    padding: '36px 30px',
     display: 'flex',
     flexDirection: 'column',
     justifyContent: 'center',
@@ -122,7 +121,7 @@ const styles = {
     fontWeight: '500',
   },
   titleSection: {
-    marginBottom: '20px',
+    marginBottom: '30px',
   },
   title: {
     fontSize: '28px',
@@ -135,45 +134,8 @@ const styles = {
     fontSize: '15px',
     margin: '0',
   },
-  googleButton: {
-    width: '100%',
-    padding: '10px', // Reduced padding
-    border: '1px solid #e5e5e5', // Reduced border thickness
-    borderRadius: '12px',
-    background: 'white',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: '12px',
-    fontSize: '15px',
-    fontWeight: '500',
-    color: '#1a1a1a',
-    cursor: 'pointer',
-    marginBottom: '15px',
-    transition: 'all 0.2s ease',
-
-  },
-  divider: {
-    display: 'flex',
-    alignItems: 'center',
-    marginBottom: '0px'
-    
-  },
-  dividerLine: {
-    flex: '1',
-    height: '1px',
-    background: '#e5e5e5',
-    
-  },
-  dividerText: {
-    padding: '0 15px',
-    color: '#999',
-    
-    fontSize: '13px',
-  },
   inputGroup: {
-    marginBottom: '13px', // Match SignUpPage spacing between inputs
-    
+    marginBottom: '20px',
   },
   label: {
     display: 'flex',
@@ -182,12 +144,11 @@ const styles = {
     fontSize: '13px',
     fontWeight: '600',
     color: '#1a1a1a',
-    
   },
   input: {
     width: '100%',
-    padding: '10px', // Reduced padding
-    border: '1px solid #e5e5e5', // Reduced border thickness
+    padding: '12px',
+    border: '1px solid #e5e5e5',
     borderRadius: '12px',
     fontSize: '15px',
     outline: 'none',
@@ -197,7 +158,7 @@ const styles = {
   },
   forgotPassword: {
     textAlign: 'center',
-    marginBottom: 'auto',
+    marginBottom: '20px',
   },
   forgotPasswordLink: {
     color: '#667eea',
@@ -207,8 +168,8 @@ const styles = {
   },
   loginButton: {
     width: '100%',
-    padding: '10px', // Reduced padding
-    border: '1px solid #e5e5e5', // Reduced border thickness
+    padding: '12px',
+    border: 'none',
     background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
     color: 'white',
     borderRadius: '12px',
@@ -216,7 +177,19 @@ const styles = {
     fontWeight: '600',
     cursor: 'pointer',
     transition: 'all 0.2s ease',
-    marginTop: '10px',
+    marginBottom: '15px',
+  },
+  backButton: {
+    width: '100%',
+    padding: '12px',
+    background: '#e5e5e5',
+    color: '#333',
+    border: 'none',
+    borderRadius: '12px',
+    fontSize: '15px',
+    fontWeight: '600',
+    cursor: 'pointer',
+    transition: 'background 0.2s',
   },
   rightPanel: {
     flex: '1',
@@ -236,12 +209,12 @@ const styles = {
   },
   featureCard: {
     background: 'rgba(255, 255, 255, 0.9)',
-    margin: '20px', // Reduced margin
+    margin: '20px',
     borderRadius: '20px',
-    padding: '20px', // Reduced padding
+    padding: '20px',
     textAlign: 'center',
     backdropFilter: 'blur(10px)',
-    border: '1px solid rgba(255, 255, 255, 0.1)', // Reduced border thickness
+    border: '1px solid rgba(255, 255, 255, 0.1)',
   },
   featureIcon: {
     width: '70px',
@@ -267,15 +240,6 @@ const styles = {
   },
 };
 
-const GoogleIcon = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24">
-    <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-    <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-    <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-    <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-  </svg>
-);
-
 const CarIcon = () => (
   <svg width="35" height="35" fill="white" viewBox="0 0 24 24">
     <path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.22.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.5 16c-.83 0-1.5-.67-1.5-1.5S5.67 13 6.5 13s1.5.67 1.5 1.5S7.33 16 6.5 16zm11 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM5 11l1.5-4.5h11L19 11H5z"/>
@@ -297,7 +261,6 @@ const LoginForm = () => {
 
     try {
       await login(email, password);
-      // Redirect to dashboard on successful login
       navigate('/dashboard');
     } catch (error) {
       console.error('Login error:', error);
@@ -371,7 +334,9 @@ const LoginForm = () => {
         )}
       </div>
       <div style={styles.forgotPassword}>
-        <a href="#" style={styles.forgotPasswordLink} onClick={e => { e.preventDefault(); navigate('/forgot-password'); }}>Forgot your password?</a>
+        <a href="#" style={styles.forgotPasswordLink} onClick={e => { e.preventDefault(); navigate('/forgot-password'); }}>
+          Forgot your password?
+        </a>
       </div>
       <button 
         type="submit" 
@@ -390,8 +355,8 @@ const LoginForm = () => {
 
 const LoginPage = () => {
   const navigate = useNavigate();
-  // Animation state for slide-up
   const [slideIn, setSlideIn] = React.useState(false);
+  
   React.useEffect(() => {
     setTimeout(() => setSlideIn(true), 10);
   }, []);
@@ -413,40 +378,24 @@ const LoginPage = () => {
               <div style={styles.logoDot}></div>
               <span style={styles.logoText}>Brocab</span>
             </div>
-            <a href="#" style={styles.createAccountLink} onClick={e => { e.preventDefault(); navigate('/signup'); }}>Create an account</a>
+            <a 
+              href="#" 
+              style={styles.createAccountLink} 
+              onClick={e => { e.preventDefault(); navigate('/signup'); }}
+            >
+              Create an account
+            </a>
           </div>
           <div style={styles.titleSection}>
             <h2 style={styles.title}>Welcome back</h2>
             <p style={styles.subtitle}>Log in to your account to continue</p>
           </div>
-          <button style={styles.googleButton}>
-            <GoogleIcon />
-            Continue with Google
-          </button>
-          <div style={styles.divider}>
-            <div style={styles.dividerLine}></div>
-            <div style={styles.dividerText}>or</div>
-            <div style={styles.dividerLine}></div>
-          </div>
           <LoginForm />
-          {/* Back button at the bottom */}
           <button
             type="button"
-            style={{
-              width: '100%',
-              marginTop: 18,
-              padding: '12px',
-              background: '#e5e5e5',
-              color: '#333',
-              border: 'none',
-              borderRadius: '12px',
-              fontSize: '15px',
-              fontWeight: 600,
-              cursor: 'pointer',
-              transition: 'background 0.2s',
-            }}
+            style={styles.backButton}
             onClick={() => navigate('/')}
-            aria-label="Back to dashboard"
+            aria-label="Back to home"
           >
             Back
           </button>

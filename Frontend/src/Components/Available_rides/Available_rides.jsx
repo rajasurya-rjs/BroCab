@@ -8,6 +8,7 @@ const BACKGROUND_IMAGE = '/backgroundimg.png';
 
 const Available_rides = () => {
   const [rides, setRides] = useState([]);
+  const [requestedRides, setRequestedRides] = useState(new Set());
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [selectedRide, setSelectedRide] = useState(null);

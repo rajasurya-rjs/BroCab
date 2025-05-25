@@ -45,6 +45,13 @@ func SendJoinRequest(c *gin.Context) {
 		return
 	}
 
+	// Get ride leader information for notification
+	rideLeader, err := getUserByID(targetRide.LeaderID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get ride leader information"})
+		return
+	}
+
 	// Check if user has already created a ride on the same date
 	var existingRideCount int64
 	if err := DB.Model(&Ride{}).Where("leader_id = ? AND date = ?", user.ID, targetRide.Date).Count(&existingRideCount).Error; err != nil {
@@ -102,6 +109,16 @@ func SendJoinRequest(c *gin.Context) {
 	if err := DB.Create(&request).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create join request"})
 		return
+	}
+
+	// Send notification to ride leader
+	notificationTitle := "New Join Request"
+	notificationMessage := fmt.Sprintf("%s has requested to join your ride from %s to %s on %s at %s",
+		user.Name, targetRide.Origin, targetRide.Destination, targetRide.Date, targetRide.Time)
+	
+	if err := createNotification(rideLeader.FirebaseUID, notificationTitle, notificationMessage, "join_request", uint(rideID)); err != nil {
+		// Log error but don't fail the request since the join request was created successfully
+		fmt.Printf("Failed to create notification for ride leader %s: %v\n", rideLeader.FirebaseUID, err)
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Join request sent"})
