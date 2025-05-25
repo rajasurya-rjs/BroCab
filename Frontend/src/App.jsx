@@ -8,7 +8,7 @@ import Available_rides from "./Components/Available_rides/Available_rides";
 import Contact_us from "./Components/Contact_us/Contact_us";
 import Privileges from "./Components/Privileges/Privileges";
 import Notifications from "./Components/Notifications/Notifications";
-import PostRidePage from "./Components/PostRide";
+import PostRidePage from "./Components/PostRide/PostRide";
 import Requested from "./Components/Requested/Requested";
 
 function App() {

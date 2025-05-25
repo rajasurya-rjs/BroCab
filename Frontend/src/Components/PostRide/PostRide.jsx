@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { MapPin, Calendar, Clock, Users, DollarSign, User, CheckCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../firebase/AuthContext";
+import { useAuth } from "../../firebase/AuthContext";
 
 const BrocabRouteBackground = () => (
   <svg
@@ -434,17 +434,16 @@ styleSheet.textContent = `
 document.head.appendChild(styleSheet);
 
 const PostRidePage = ({ onSubmit }) => {
-  const { currentUser, fetchUserDetails } = useAuth();
+  const { currentUser, fetchUserDetails, getIdToken } = useAuth(); // Added getIdToken from AuthContext
   const navigate = useNavigate();
   const [form, setForm] = useState({
-    leader: "",
     origin: "",
     destination: "",
     date: "",
     time: "",
-    seats: 0,
-    seats_filled: 0,
-    price: 0.00,
+    seats: "",
+    seats_filled: 1,
+    price: "",
   });
 
   const [success, setSuccess] = useState(false);
@@ -452,17 +451,33 @@ const PostRidePage = ({ onSubmit }) => {
   const [focusField, setFocusField] = useState("");
   const [hoverStates, setHoverStates] = useState({});
   const [errors, setErrors] = useState({});
+  const [rideDetails, setRideDetails] = useState(null); // To store ride details for the popup
 
   useEffect(() => {
     const fetchLeaderName = async () => {
-      if (currentUser) {
+      if (!currentUser) {
+        alert("Please log in before posting a ride.");
+        navigate("/login");
+        return;
+      }
+
+      try {
         const userData = await fetchUserDetails();
-        setForm((prev) => ({ ...prev, leader: userData.name }));
+        if (userData?.name) {
+          setForm((prev) => ({ ...prev, leader: userData.name }));
+        } else {
+          alert("Please log in before posting a ride.");
+          navigate("/login");
+        }
+      } catch (error) {
+        console.error("Failed to fetch leader name:", error);
+        alert("An error occurred. Please log in again.");
+        navigate("/login");
       }
     };
 
     fetchLeaderName();
-  }, [currentUser]);
+  }, [currentUser, fetchUserDetails, navigate]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -478,7 +493,7 @@ const PostRidePage = ({ onSubmit }) => {
     } else if (name === "price") {
       // Convert price to float
       setForm((prev) => ({ ...prev, [name]: parseFloat(value) || 0.0 }));
-    } else {
+    } else if(name !== "leader") {
       setForm((prev) => ({ ...prev, [name]: value }));
     }
 
@@ -500,53 +515,53 @@ const PostRidePage = ({ onSubmit }) => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (e) => {
+    if (e) e.preventDefault();
     if (!currentUser) {
       alert("You must log in before posting a ride.");
       navigate("/login");
       return;
     }
-
     if (!validateForm()) {
       return;
     }
-
     setLoading(true);
-
     try {
-      const response = await fetch("http://localhost:8080/POST/ride", {
+      const response = await fetch("http://localhost:8080/ride", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          "Authorization": `Bearer ${await getIdToken()}`,
         },
         body: JSON.stringify({
           ...form,
-          seats: parseInt(form.seats, 10), // Ensure seats is sent as an integer
-          price: parseFloat(form.price),  // Ensure price is sent as a float
+          leader: undefined,
+          seats: parseInt(form.seats, 10),
+          price: parseFloat(form.price),
         }),
       });
-
       if (!response.ok) {
         throw new Error("Failed to post ride.");
       }
-
+      setRideDetails({
+        origin: form.origin,
+        destination: form.destination,
+        date: form.date,
+        seats: form.seats,
+        price: form.price,
+      });
       setSuccess(true);
       setLoading(false);
-
       if (onSubmit) onSubmit(form);
-
-      setTimeout(() => {
-        setForm({
-          leader: currentUser?.displayName || "",
-          origin: "",
-          destination: "",
-          date: "",
-          time: "",
-          seats: "",
-          price: "",
-        });
-        setSuccess(false);
-      }, 3000);
+      setForm({
+        origin: "",
+        destination: "",
+        date: "",
+        time: "",
+        seats: "",
+        price: "",
+      });
+      // Do not navigate immediately; wait for user to close popup
     } catch (error) {
       alert(error.message);
       setLoading(false);
@@ -644,88 +659,89 @@ const PostRidePage = ({ onSubmit }) => {
             <div style={styles.decorativeElement1}></div>
             <div style={styles.decorativeElement2}></div>
           </div>
-
           {/* Form */}
           <div style={styles.formContainer}>
-            <div style={getGridStyle()}>
-              {inputFields.map((field) => {
-                const Icon = field.icon;
-                const isActive = focusField === field.name;
-                
-                return (
-                  <div 
-                    key={field.name} 
-                    style={{
-                      ...styles.fieldContainer,
-                      ...(field.fullWidth ? styles.fieldContainerFull : {})
-                    }}
-                  >
-                    <label style={styles.label}>
-                      <Icon style={styles.labelIcon} />
-                      {field.label}
-                    </label>
-                    
-                    <div style={styles.inputWrapper}>
-                      <input
-                        type={field.type}
-                        name={field.name}
-                        value={form[field.name]}
-                        onChange={handleChange}
-                        placeholder={field.placeholder}
-                        min={field.min}
-                        required
-                        disabled={field.disabled || loading}
-                        style={getInputStyle(field.name, field.disabled)}
-                        onFocus={() => setFocusField(field.name)}
-                        onBlur={() => setFocusField("")}
-                        onMouseEnter={() => handleMouseEnter(field.name)}
-                        onMouseLeave={() => handleMouseLeave(field.name)}
-                      />
+            <form onSubmit={handleSubmit}>
+              <div style={getGridStyle()}>
+                {inputFields.map((field) => {
+                  const Icon = field.icon;
+                  const isActive = focusField === field.name;
+                  
+                  return (
+                    <div 
+                      key={field.name} 
+                      style={{
+                        ...styles.fieldContainer,
+                        ...(field.fullWidth ? styles.fieldContainerFull : {})
+                      }}
+                    >
+                      <label style={styles.label}>
+                        <Icon style={styles.labelIcon} />
+                        {field.label}
+                      </label>
                       
-                      {isActive && <div style={styles.focusIndicator}></div>}
+                      <div style={styles.inputWrapper}>
+                        <input
+                          type={field.type}
+                          name={field.name}
+                          value={form[field.name]}
+                          onChange={handleChange}
+                          placeholder={field.placeholder}
+                          min={field.min}
+                          required
+                          disabled={field.disabled || loading}
+                          style={getInputStyle(field.name, field.disabled)}
+                          onFocus={() => setFocusField(field.name)}
+                          onBlur={() => setFocusField("")}
+                          onMouseEnter={() => handleMouseEnter(field.name)}
+                          onMouseLeave={() => handleMouseLeave(field.name)}
+                        />
+                        
+                        {isActive && <div style={styles.focusIndicator}></div>}
+                      </div>
+                      {errors[field.name] && <div style={{ color: 'red', fontSize: '12px', marginTop: '4px' }}>{errors[field.name]}</div>}
                     </div>
-                    {errors[field.name] && <div style={{ color: 'red', fontSize: '12px', marginTop: '4px' }}>{errors[field.name]}</div>}
-                  </div>
-                );
-              })}
-            </div>
-
-            {/* Success Message */}
-            {success && (
-              <div style={styles.successMessage}>
-                <CheckCircle style={styles.successIcon} />
-                <div style={styles.successContent}>
-                  <h3 style={styles.successTitle}>Ride Posted Successfully!</h3>
-                  <p style={styles.successText}>Your ride is now live and others can request to join your journey.</p>
-                </div>
+                  );
+                })}
               </div>
-            )}
 
-            {/* Submit Button */}
-            <button
-              onClick={handleSubmit}
-              disabled={loading || success}
-              style={getButtonStyle()}
-              onMouseEnter={() => handleMouseEnter('submitButton')}
-              onMouseLeave={() => handleMouseLeave('submitButton')}
-            >
-              {loading ? (
-                <>
-                  <div style={styles.spinner}></div>
-                  Posting Ride...
-                </>
-              ) : success ? (
-                <>
-                  <CheckCircle style={styles.buttonIcon} />
-                  Posted Successfully!
-                </>
-              ) : (
-                <>
-                  <MapPin style={styles.buttonIcon} />
-                  Post My Ride
-                </>
+              {/* Success Message */}
+              {success && (
+                <div style={styles.successMessage}>
+                  <CheckCircle style={styles.successIcon} />
+                  <div style={styles.successContent}>
+                    <h3 style={styles.successTitle}>Ride Posted Successfully!</h3>
+                    <p style={styles.successText}>Your ride is now live and others can request to join your journey.</p>
+                  </div>
+                </div>
               )}
-            </button>
+
+              {/* Submit Button */}
+              <button
+                type="submit"
+                disabled={loading || success}
+                style={getButtonStyle()}
+                onMouseEnter={() => handleMouseEnter('submitButton')}
+                onMouseLeave={() => handleMouseLeave('submitButton')}
+              >
+                {loading ? (
+                  <>
+                    <div style={styles.spinner}></div>
+                    Posting Ride...
+                  </>
+                ) : success ? (
+                  <>
+                    <CheckCircle style={styles.buttonIcon} />
+                    Posted Successfully!
+                  </>
+                ) : (
+                  <>
+                    <MapPin style={styles.buttonIcon} />
+                    Post My Ride
+                  </>
+                )}
+              </button>
+            </form>
 
             {/* Info Cards */}
             <div style={getInfoSectionStyle()}>
@@ -748,6 +764,62 @@ const PostRidePage = ({ onSubmit }) => {
           </div>
         </div>
       </div>
+
+      {/* Ride Details Popup */}
+      {rideDetails && (
+        <div style={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          width: "100vw",
+          height: "100vh",
+          backgroundColor: "rgba(0, 0, 0, 0.6)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          zIndex: 1000,
+        }}>
+          <div style={{
+            backgroundColor: "#ffffff",
+            padding: "30px",
+            borderRadius: "15px",
+            textAlign: "center",
+            boxShadow: "0 8px 16px rgba(0, 0, 0, 0.2)",
+            maxWidth: "500px",
+            width: "90%",
+          }}>
+            <h2 style={{ color: "#4CAF50", marginBottom: "20px" }}>Ride Created Successfully!</h2>
+            <p style={{ fontSize: "16px", marginBottom: "10px" }}><strong>From:</strong> {rideDetails.origin}</p>
+            <p style={{ fontSize: "16px", marginBottom: "10px" }}><strong>To:</strong> {rideDetails.destination}</p>
+            <p style={{ fontSize: "16px", marginBottom: "10px" }}><strong>Date:</strong> {rideDetails.date}</p>
+            <p style={{ fontSize: "16px", marginBottom: "10px" }}><strong>Available Seats:</strong> {rideDetails.seats}</p>
+            <p style={{ fontSize: "16px", marginBottom: "20px" }}><strong>Price:</strong> ₹{rideDetails.price}</p>
+            <button
+              onClick={(e) => {
+                e.preventDefault();
+                setRideDetails(null);
+                setSuccess(false);
+                navigate("/my-rides");
+              }}
+              style={{
+                padding: "12px 24px",
+                backgroundColor: "#4CAF50",
+                color: "#ffffff",
+                border: "none",
+                borderRadius: "8px",
+                cursor: "pointer",
+                fontSize: "16px",
+                fontWeight: "bold",
+                transition: "background-color 0.3s ease",
+              }}
+              onMouseEnter={(e) => (e.target.style.backgroundColor = "#45a049")}
+              onMouseLeave={(e) => (e.target.style.backgroundColor = "#4CAF50")}
+            >
+              OK
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
