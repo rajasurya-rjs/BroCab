@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom'; // Add this import
 import './Dashboard.css'; // Import Dashboard styles
 import Navbar from '../Navbar/Navbar'; // Import Navbar component
-import ConnectionTest from '../ConnectionTest/ConnectionTest';
 
 // Background image constant
 const BACKGROUND_IMAGE = '/backgroundimg.png';
@@ -55,8 +54,6 @@ const Dashboard = () => {
     <div className="bcDash-container" style={{ backgroundImage: `url(${BACKGROUND_IMAGE})` }}>
       {/* Navigation Header */}
       <Navbar />
-
-      <ConnectionTest />
       
       {/* Main Content */}
       <div className="bcDash-main-content">

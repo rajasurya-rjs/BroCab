@@ -6,23 +6,59 @@ import './Notifications.css';
 const BACKGROUND_IMAGE = '/backgroundimg.png';
 
 const Notifications = () => {
-  // Initialize as empty array instead of null
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [filter, setFilter] = useState('all');
   const [markingAsRead, setMarkingAsRead] = useState(new Set());
+  const [lastNotificationCount, setLastNotificationCount] = useState(0);
   const { currentUser, getIdToken } = useAuth();
 
   useEffect(() => {
     if (currentUser) {
       fetchNotifications();
+      requestNotificationPermission();
+      
+      // More frequent refresh for real-time notifications
+      const interval = setInterval(fetchNotifications, 5000); // Every 5 seconds
+      return () => clearInterval(interval);
     }
   }, [currentUser]);
 
+  const requestNotificationPermission = async () => {
+    if ('Notification' in window && Notification.permission === 'default') {
+      await Notification.requestPermission();
+    }
+  };
+
+  const showBrowserNotification = (notification) => {
+    if ('Notification' in window && Notification.permission === 'granted') {
+      const browserNotification = new Notification(notification.title, {
+        body: notification.message,
+        icon: '/favicon.ico',
+        badge: '/favicon.ico',
+        tag: `notification-${notification.notification_id}`,
+        requireInteraction: true
+      });
+
+      browserNotification.onclick = () => {
+        window.focus();
+        handleNotificationClick(notification);
+        browserNotification.close();
+      };
+
+      // Auto close after 10 seconds
+      setTimeout(() => {
+        browserNotification.close();
+      }, 10000);
+    }
+  };
+
   const fetchNotifications = async () => {
     try {
-      setLoading(true);
+      if (loading) {
+        setLoading(true);
+      }
       setError(null);
       
       const token = await getIdToken();
@@ -49,15 +85,26 @@ const Notifications = () => {
       const data = await response.json();
       console.log('Notifications API Response:', data);
       
-      // Ensure we always set an array, never null
+      let newNotifications = [];
       if (data && data.notifications && Array.isArray(data.notifications)) {
-        setNotifications(data.notifications);
+        newNotifications = data.notifications;
       } else if (Array.isArray(data)) {
-        setNotifications(data);
-      } else {
-        // If API returns null or unexpected format, set empty array
-        setNotifications([]);
+        newNotifications = data;
       }
+
+      // Check for new notifications and show browser notifications
+      if (lastNotificationCount > 0 && newNotifications.length > lastNotificationCount) {
+        const latestNotifications = newNotifications.slice(0, newNotifications.length - lastNotificationCount);
+        latestNotifications.forEach(notification => {
+          if (!notification.read) {
+            showBrowserNotification(notification);
+          }
+        });
+      }
+
+      setNotifications(newNotifications);
+      setLastNotificationCount(newNotifications.length);
+      
     } catch (error) {
       console.error('Error fetching notifications:', error);
       if (error.message.includes('Authentication failed')) {
@@ -65,14 +112,12 @@ const Notifications = () => {
       } else {
         setError('Failed to load notifications');
       }
-      // Always set empty array on error, never null
       setNotifications([]);
     } finally {
       setLoading(false);
     }
   };
 
-  // Rest of your component code remains the same...
   const markAsRead = async (notificationId) => {
     if (markingAsRead.has(notificationId)) return;
 
@@ -121,6 +166,114 @@ const Notifications = () => {
     }
   };
 
+  const markAllAsRead = async () => {
+    const unreadNotifications = notifications.filter(n => !n.read);
+    
+    if (unreadNotifications.length === 0) {
+      alert('No unread notifications to mark');
+      return;
+    }
+
+    if (!window.confirm(`Mark all ${unreadNotifications.length} unread notifications as read?`)) {
+      return;
+    }
+
+    try {
+      const token = await getIdToken();
+      
+      if (!token) {
+        throw new Error('No authentication token available');
+      }
+
+      // Mark all unread notifications as read
+      const promises = unreadNotifications.map(notification =>
+        fetch(`https://brocab.onrender.com/notification/${notification.notification_id}/read`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          }
+        })
+      );
+
+      await Promise.all(promises);
+
+      // Update local state
+      setNotifications(prev => 
+        prev.map(notification => ({ ...notification, read: true }))
+      );
+
+      // Dispatch custom event to update navbar count
+      window.dispatchEvent(new CustomEvent('notificationRead'));
+      
+      alert('All notifications marked as read!');
+      
+    } catch (error) {
+      console.error('Error marking all notifications as read:', error);
+      alert('Failed to mark all notifications as read');
+    }
+  };
+
+  const formatTime = (timestamp) => {
+    if (!timestamp) return 'N/A';
+    
+    try {
+      const date = new Date(timestamp);
+      const now = new Date();
+      const diffInMinutes = Math.floor((now - date) / (1000 * 60));
+      
+      if (diffInMinutes < 1) return 'Just now';
+      if (diffInMinutes < 60) return `${diffInMinutes}m ago`;
+      
+      const diffInHours = Math.floor(diffInMinutes / 60);
+      if (diffInHours < 24) return `${diffInHours}h ago`;
+      
+      const diffInDays = Math.floor(diffInHours / 24);
+      if (diffInDays < 7) return `${diffInDays}d ago`;
+      
+      return date.toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: date.getFullYear() !== now.getFullYear() ? 'numeric' : undefined
+      });
+    } catch {
+      return 'N/A';
+    }
+  };
+
+  const getNotificationIcon = (title) => {
+    const lowerTitle = title?.toLowerCase() || '';
+    
+    if (lowerTitle.includes('join request') || lowerTitle.includes('wants to join')) return '🙋‍♂️';
+    if (lowerTitle.includes('accepted') || lowerTitle.includes('approved')) return '✅';
+    if (lowerTitle.includes('rejected') || lowerTitle.includes('declined')) return '❌';
+    if (lowerTitle.includes('new ride') || lowerTitle.includes('available')) return '🚗';
+    if (lowerTitle.includes('cancelled')) return '🚫';
+    if (lowerTitle.includes('reminder')) return '⏰';
+    if (lowerTitle.includes('payment')) return '💳';
+    return '📢';
+  };
+
+  const handleNotificationClick = (notification) => {
+    // Mark as read if unread
+    if (!notification.read) {
+      markAsRead(notification.notification_id);
+    }
+
+    // Navigate based on notification type
+    const title = notification.title?.toLowerCase() || '';
+    if (title.includes('join request') || title.includes('wants to join')) {
+      // Navigate to My Rides to manage requests
+      window.location.href = '/my-rides';
+    } else if (title.includes('accepted') || title.includes('approved')) {
+      // Navigate to My Booked Rides
+      window.location.href = '/my-booked-rides';
+    } else if (title.includes('rejected')) {
+      // Navigate to Requested rides
+      window.location.href = '/requested';
+    }
+  };
+
   // Safe filtering with null check
   const filteredNotifications = (notifications || []).filter(notification => {
     if (filter === 'unread') return !notification.read;
@@ -132,7 +285,54 @@ const Notifications = () => {
   const unreadCount = (notifications || []).filter(n => !n.read).length;
   const totalCount = (notifications || []).length;
 
-  // Rest of your component JSX...
+  if (!currentUser) {
+    return (
+      <div className="bcNotifications-container" style={{ backgroundImage: `url(${BACKGROUND_IMAGE})` }}>
+        <Navbar />
+        <div className="bcNotifications-main-content">
+          <div className="bcNotifications-error">
+            <h2>Authentication Required</h2>
+            <p>Please login to view your notifications.</p>
+            <button onClick={() => window.location.href = '/login'} className="bcNotifications-back-btn">
+              Go to Login
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (loading && notifications.length === 0) {
+    return (
+      <div className="bcNotifications-container" style={{ backgroundImage: `url(${BACKGROUND_IMAGE})` }}>
+        <Navbar />
+        <div className="bcNotifications-main-content">
+          <div className="bcNotifications-loading">
+            <div className="bcNotifications-spinner"></div>
+            <p>Loading your notifications...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="bcNotifications-container" style={{ backgroundImage: `url(${BACKGROUND_IMAGE})` }}>
+        <Navbar />
+        <div className="bcNotifications-main-content">
+          <div className="bcNotifications-error">
+            <h2>Oops! Something went wrong</h2>
+            <p>{error}</p>
+            <button onClick={fetchNotifications} className="bcNotifications-back-btn">
+              Retry
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="bcNotifications-container" style={{ backgroundImage: `url(${BACKGROUND_IMAGE})` }}>
       <Navbar />
@@ -206,9 +406,46 @@ const Notifications = () => {
                 <div 
                   key={`notification-${notification.notification_id}-${index}`} 
                   className={`bcNotifications-card ${!notification.read ? 'unread' : 'read'}`}
-                  onClick={() => !notification.read && markAsRead(notification.notification_id)}
+                  onClick={() => handleNotificationClick(notification)}
                 >
-                  {/* Your notification card content */}
+                  <div className="bcNotifications-card-content">
+                    <div className="bcNotifications-icon">
+                      {getNotificationIcon(notification.title)}
+                    </div>
+                    
+                    <div className="bcNotifications-content">
+                      <div className="bcNotifications-header-row">
+                        <h3 className="bcNotifications-notification-title">
+                          {notification.title}
+                        </h3>
+                        <div className="bcNotifications-meta">
+                          <span className="bcNotifications-time">
+                            {formatTime(notification.timestamp)}
+                          </span>
+                          {!notification.read && (
+                            <div className="bcNotifications-unread-dot"></div>
+                          )}
+                        </div>
+                      </div>
+                      
+                      <p className="bcNotifications-message">
+                        {notification.message}
+                      </p>
+                    </div>
+                    
+                    {!notification.read && (
+                      <button 
+                        className="bcNotifications-mark-read-btn"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          markAsRead(notification.notification_id);
+                        }}
+                        disabled={markingAsRead.has(notification.notification_id)}
+                      >
+                        {markingAsRead.has(notification.notification_id) ? '...' : '✓'}
+                      </button>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>
