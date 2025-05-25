@@ -91,6 +91,12 @@ export const userAPI = {
     return response.json();
   },
 
+  // Get user's sent join requests
+  getSentRequests: async () => {
+    const response = await apiCall('/user/requests');
+    return response.json();
+  },
+
   // Get notifications
   getNotifications: async () => {
     const response = await apiCall('/user/notifications');
@@ -106,6 +112,14 @@ export const userAPI = {
   // Cancel ride participation (unified - handles both pending requests and participation)
   cancelRide: async (rideID) => {
     const response = await apiCall(`/user/cancel-ride/${rideID}`, {
+      method: 'DELETE',
+    });
+    return response.json();
+  },
+
+  // Clear involvement for a specific date (requests and privileges)
+  clearInvolvementForDate: async (date) => {
+    const response = await apiCall(`/user/clear-involvement/${date}`, {
       method: 'DELETE',
     });
     return response.json();
