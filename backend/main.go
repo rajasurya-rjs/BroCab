@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	"net/http"
 	"os"
 	"time"
 
@@ -44,6 +45,13 @@ func main() {
 	// Public route example
 	r.GET("/public", func(c *gin.Context) {
 		c.JSON(200, gin.H{"message": "This is a public endpoint"})
+	})
+
+	// Ping endpoint for testing connectivity
+	r.GET("/ping", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{
+			"message": "pong",
+		})
 	})
 
 	// Protected routes (require authentication)
