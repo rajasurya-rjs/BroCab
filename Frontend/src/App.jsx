@@ -10,7 +10,7 @@ import PostRidePage from "./Components/PostRide/PostRide";
 import Requested from "./Components/Requested/Requested";
 import MyBookedRides from "./Components/MyBookedRides/MyBookedRides";
 import Privileges from "./Components/Privileges/Privileges";
-import MyRides from "./Components/Myrides/Myrides";
+import MyRides from "./Components/Myrides/MyRides";
 import Notifications from "./Components/Notifications/Notifications";
 function App() {
   return (

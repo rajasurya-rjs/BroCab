@@ -213,3 +213,12 @@ func GetRideLeader(c *gin.Context) {
 
 	c.JSON(http.StatusOK, response)
 }
+
+// Helper function to get user by database ID and return Firebase UID
+func getUserByID(userID uint) (*User, error) {
+	var user User
+	if err := DB.First(&user, "id = ?", userID).Error; err != nil {
+		return nil, err
+	}
+	return &user, nil
+}
