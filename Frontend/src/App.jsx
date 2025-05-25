@@ -10,7 +10,7 @@ import Privileges from "./Components/Privileges/Privileges";
 import Notifications from "./Components/Notifications/Notifications";
 import PostRidePage from "./Components/PostRide/PostRide";
 import Requested from "./Components/Requested/Requested";
-
+import MyBookedRides from "./Components/MyBookedRides/MyBookedRides";
 function App() {
   return (
     <BrowserRouter>
@@ -26,6 +26,7 @@ function App() {
         <Route path="/notifications" element={<Notifications />} />
         <Route path="/post-ride" element={<PostRidePage />} />
         <Route path="/requested" element={<Requested/>}/>
+        <Route path="my-booked-rides" element={<MyBookedRides />} />
       </Routes>
     </BrowserRouter>
   );
