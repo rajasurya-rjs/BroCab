@@ -33,11 +33,11 @@ func main() {
 
 	// Configure CORS to allow frontend communication
 	r.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"http://localhost:3000", "http://localhost:5173", "http://127.0.0.1:3000", "http://127.0.0.1:5173", "http://localhost:5174"},
+		AllowOrigins:     []string{"*"}, // Allow all origins for production deployment
 		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"},
 		AllowHeaders:     []string{"Origin", "Content-Length", "Content-Type", "Authorization", "Accept", "X-Requested-With"},
 		ExposeHeaders:    []string{"Content-Length"},
-		AllowCredentials: true,
+		AllowCredentials: false, // Must be false when AllowOrigins is "*"
 		MaxAge:           12 * time.Hour,
 	}))
 
