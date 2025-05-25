@@ -21,13 +21,9 @@ const Navbar = () => {
     };
     fetchUserName();
     
-    // Fetch unread notification count
     fetchUnreadCount();
+    const intervalId = setInterval(fetchUnreadCount, 30000);
     
-    // Set up interval to periodically check for new notifications
-    const intervalId = setInterval(fetchUnreadCount, 30000); // Check every 30 seconds
-    
-    // Listen for notification read events
     const handleNotificationRead = () => {
       fetchUnreadCount();
     };
@@ -35,7 +31,7 @@ const Navbar = () => {
     window.addEventListener('notificationRead', handleNotificationRead);
     
     return () => {
-      clearInterval(intervalId); // Clean up on unmount
+      clearInterval(intervalId);
       window.removeEventListener('notificationRead', handleNotificationRead);
     };
   }, []);
@@ -60,20 +56,16 @@ const Navbar = () => {
     navigate('/login');
   };
 
-  // Handle BroCab click - go to dashboard and scroll to top
   const handleBrandClick = () => {
     if (location.pathname === '/dashboard') {
-      // If already on dashboard, scroll to top
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } else {
-      // Navigate to dashboard
       navigate('/dashboard');
     }
   };
 
   return (
     <nav className="bcDash-navbar">
-      {/* Make BroCab clickable */}
       <div 
         className="bcDash-nav-brand" 
         onClick={handleBrandClick}
@@ -82,7 +74,13 @@ const Navbar = () => {
       </div>
       
       <div className="bcDash-nav-links">
-        <a href="#" className="bcDash-nav-link">My Rides</a>
+        {/* Updated My Rides button to navigate to MyBookedRides */}
+        <button 
+          onClick={() => navigate('/my-booked-rides')} 
+          className="bcDash-nav-link bcDash-nav-button"
+        >
+          My Rides
+        </button>
         <button 
           onClick={() => navigate('/privileges')}
           className="bcDash-nav-link bcDash-nav-button"
