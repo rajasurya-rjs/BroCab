@@ -1,7 +1,7 @@
 // API utility functions for making authenticated requests
 import { auth } from '../firebase/config';
 
-const API_BASE_URL = 'http://localhost:8080';
+const API_BASE_URL = 'https://brocab.onrender.com';
 
 // Get auth token from Firebase user with better error handling
 const getAuthToken = async () => {

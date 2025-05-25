@@ -28,10 +28,9 @@ const MyBookedRides = () => {
         throw new Error('No authentication token available');
       }
 
-      const response = await fetch('http://localhost:8080/user/rides/joined', {
+      const response = await fetch('https://brocab.onrender.com/user/rides/joined', {
         method: 'GET',
         headers: {
-          'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         }
       });

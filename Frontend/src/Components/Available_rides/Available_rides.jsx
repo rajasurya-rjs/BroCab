@@ -109,7 +109,7 @@ const Available_rides = () => {
   const fetchRideDetails = async (rideId) => {
     try {
       setLoadingDetails(true);
-      const response = await apiCall(`http://localhost:8080/ride/${rideId}/participants`);
+      const response = await apiCall(`https://brocab.onrender.com/ride/${rideId}/participants`);
       const data = await response.json();
       setRideDetails(data);
     } catch (error) {
@@ -161,7 +161,7 @@ const Available_rides = () => {
         date: searchForm.date.trim()
       });
       
-      const apiUrl = `http://localhost:8080/ride/filter?${apiParams.toString()}`;
+      const apiUrl = `https://brocab.onrender.com/ride/filter?${apiParams.toString()}`;
       console.log('Making API call to:', apiUrl);
       
       // Use the auth context's apiCall method
@@ -319,7 +319,7 @@ const Available_rides = () => {
       }
 
       // Make POST request to join the ride with Bearer token
-      const response = await fetch(`http://localhost:8080/ride/${rideId}/join`, {
+      const response = await fetch(`https://brocab.onrender.com/ride/${rideId}/join`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
