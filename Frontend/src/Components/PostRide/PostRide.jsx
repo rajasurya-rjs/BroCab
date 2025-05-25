@@ -527,7 +527,7 @@ const PostRidePage = ({ onSubmit }) => {
     }
     setLoading(true);
     try {
-      const response = await fetch("http://localhost:8080/ride", {
+      const response = await fetch("https://brocab.onrender.com/ride", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -799,7 +799,7 @@ const PostRidePage = ({ onSubmit }) => {
                 e.preventDefault();
                 setRideDetails(null);
                 setSuccess(false);
-                navigate("/my-rides");
+                navigate("/my-booked-rides");
               }}
               style={{
                 padding: "12px 24px",

@@ -351,6 +351,63 @@
   outline: 2px solid #6366f1;
   outline-offset: 2px;
 }
+/* Update your existing CSS with these changes */
+.bcDash-user-dropdown-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.bcDash-user-dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+  padding: 8px 0;
+  min-width: 160px;
+  z-index: 1000;
+  margin-top: 4px; /* Reduced gap */
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  animation: fadeIn 0.2s;
+}
+
+/* Add this to prevent gap issues */
+.bcDash-user-dropdown::before {
+  content: '';
+  position: absolute;
+  top: -8px;
+  right: 10px;
+  width: 20px;
+  height: 12px;
+  background: transparent;
+}
+
+.bcDash-dropdown-item {
+  width: 100%;
+  padding: 12px 20px;
+  background: none;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+  font-size: 14px;
+  color: #333;
+  transition: background-color 0.2s ease;
+}
+
+.bcDash-dropdown-item:hover {
+  background-color: #f8f9fa;
+}
+
+.bcDash-dropdown-item:last-child {
+  color: #dc3545;
+}
+
+.bcDash-dropdown-item:last-child:hover {
+  background-color: #fff5f5;
+}
+
 
 /* High contrast mode support */
 @media (prefers-contrast: high) {

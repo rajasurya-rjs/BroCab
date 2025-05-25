@@ -152,7 +152,7 @@ export function AuthProvider({ children }) {
 
       console.log("AuthContext: Making API call to create user profile");
 
-      const response = await fetch("http://localhost:8080/user", {
+      const response = await fetch("https://brocab.onrender.com/user", {
         method: "POST",
         headers,
         body: JSON.stringify(userData),
@@ -183,7 +183,7 @@ export function AuthProvider({ children }) {
    
     if (token) {
       try {
-        const response = await fetch("http://localhost:8080/user", {
+        const response = await fetch("https://brocab.onrender.com/user", {
           method: "GET",
           headers: {
             // "Content-Type": "application/json", // Recommended for JSON APIs

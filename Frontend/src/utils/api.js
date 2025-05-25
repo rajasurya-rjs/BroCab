@@ -1,7 +1,26 @@
 // API utility functions for making authenticated requests
 import { auth } from '../firebase/config';
 
-const API_BASE_URL = 'http://localhost:8080';
+const API_BASE_URL = 'https://brocab.onrender.com';
+
+// Test connectivity with backend
+export const pingServer = async () => {
+  try {
+    console.log('Pinging server...');
+    const response = await fetch(`${API_BASE_URL}/ping`);
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    console.log('Ping response:', data);
+    return data;
+  } catch (error) {
+    console.error('Ping error:', error);
+    throw error;
+  }
+};
 
 // Get auth token from Firebase user with better error handling
 const getAuthToken = async () => {

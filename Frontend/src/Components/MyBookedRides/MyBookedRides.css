@@ -1,5 +1,5 @@
 /* Main Container */
-.bcPrivileges-container {
+.bcMyRides-container {
   min-height: 100vh;
   width: 100%;
   position: relative;
@@ -13,7 +13,7 @@
   color: #1e293b;
 }
 
-.bcPrivileges-main-content {
+.bcMyRides-main-content {
   flex: 1;
   padding: 20px;
   max-width: 1200px;
@@ -22,7 +22,7 @@
 }
 
 /* Header Section */
-.bcPrivileges-search-section {
+.bcMyRides-header-section {
   background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(8px);
   border-radius: 16px;
@@ -32,25 +32,25 @@
   text-align: center;
 }
 
-.bcPrivileges-header-title {
+.bcMyRides-header-section h1 {
   font-size: 32px;
   font-weight: 700;
   color: #1e293b;
   margin-bottom: 8px;
 }
 
-.bcPrivileges-header-subtitle {
+.bcMyRides-header-section p {
   font-size: 16px;
   color: #64748b;
   margin: 0;
 }
 
 /* Results Info */
-.bcPrivileges-results-info {
+.bcMyRides-results-info {
   margin-bottom: 20px;
 }
 
-.bcPrivileges-results-count {
+.bcMyRides-results-count {
   font-size: 18px;
   font-weight: 700;
   color: #1e293b;
@@ -61,14 +61,14 @@
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
 }
 
-/* Privilege Rides List */
-.bcPrivileges-list {
+/* Booked Rides List */
+.bcMyRides-list {
   display: flex;
   flex-direction: column;
   gap: 16px;
 }
 
-.bcPrivileges-card {
+.bcMyRides-card {
   background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(8px);
   border-radius: 16px;
@@ -78,12 +78,12 @@
   transition: all 0.3s;
 }
 
-.bcPrivileges-card:hover {
+.bcMyRides-card:hover {
   transform: translateY(-2px);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
 }
 
-.bcPrivileges-card-content {
+.bcMyRides-card-content {
   display: grid;
   grid-template-columns: 2fr 1.5fr 1fr;
   gap: 24px;
@@ -91,26 +91,26 @@
 }
 
 /* Time and Route */
-.bcPrivileges-time-route {
+.bcMyRides-time-route {
   display: flex;
   flex-direction: column;
   gap: 8px;
 }
 
-.bcPrivileges-time-info {
+.bcMyRides-time-info {
   display: flex;
   align-items: center;
   gap: 16px;
 }
 
-.bcPrivileges-departure-time,
-.bcPrivileges-arrival-time {
+.bcMyRides-departure-time,
+.bcMyRides-arrival-time {
   font-size: 18px;
   font-weight: 700;
   color: #1e293b;
 }
 
-.bcPrivileges-duration {
+.bcMyRides-duration {
   font-size: 14px;
   color: #64748b;
   font-weight: 500;
@@ -119,153 +119,112 @@
   border-radius: 6px;
 }
 
-.bcPrivileges-route-info {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.bcPrivileges-route-text {
+.bcMyRides-route-text {
   font-size: 14px;
   color: #64748b;
   font-weight: 500;
 }
 
-.bcPrivileges-date {
+.bcMyRides-date {
   font-size: 13px;
   color: #64748b;
   font-weight: 500;
+  margin-top: 4px;
+  display: block;
 }
 
 /* Vehicle Info */
-.bcPrivileges-vehicle-info {
+.bcMyRides-vehicle-details {
   display: flex;
   flex-direction: column;
   gap: 12px;
 }
 
-.bcPrivileges-vehicle-details {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.bcPrivileges-vehicle-type {
+.bcMyRides-vehicle-type {
   font-size: 14px;
   font-weight: 600;
-  color: #f59e0b;
-  background: rgba(245, 158, 11, 0.1);
+  color: #10b981;
+  background: rgba(16, 185, 129, 0.1);
   padding: 4px 8px;
   border-radius: 6px;
   display: inline-block;
   width: fit-content;
 }
 
-.bcPrivileges-seats-display {
+.bcMyRides-seats-display {
   display: flex;
   flex-direction: column;
   gap: 6px;
 }
 
-.bcPrivileges-seats-text {
+.bcMyRides-seats-text {
   font-size: 13px;
   color: #059669;
   font-weight: 600;
 }
 
-.bcPrivileges-seats-visual {
+.bcMyRides-seats-visual {
   display: flex;
   gap: 4px;
 }
 
-.bcPrivileges-seat-icon {
+.bcMyRides-seat-icon {
   font-size: 14px;
   opacity: 0.3;
 }
 
-.bcPrivileges-seat-icon.filled {
+.bcMyRides-seat-icon.filled {
   opacity: 1;
   color: #6366f1;
 }
 
-.bcPrivileges-seat-icon.empty {
+.bcMyRides-seat-icon.empty {
   opacity: 0.3;
   color: #94a3b8;
 }
 
-/* Price and Actions */
-.bcPrivileges-price-actions {
+/* Price and Status */
+.bcMyRides-price-status {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
   gap: 12px;
 }
 
-.bcPrivileges-price-info {
+.bcMyRides-price-info {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
 }
 
-.bcPrivileges-price {
+.bcMyRides-price {
   font-size: 24px;
   font-weight: 900;
   color: #6366f1;
 }
 
-.bcPrivileges-price-label {
+.bcMyRides-price-label {
   font-size: 12px;
   color: #64748b;
   font-weight: 500;
 }
 
-.bcPrivileges-action-buttons {
-  display: flex;
-  gap: 8px;
-}
-
-.bcPrivileges-confirm-btn {
-  padding: 10px 16px;
+.bcMyRides-status-confirmed {
+  padding: 12px 24px;
   background: linear-gradient(135deg, #10b981, #059669);
   color: white;
-  border: none;
-  border-radius: 8px;
-  font-size: 12px;
+  border-radius: 12px;
+  font-size: 14px;
   font-weight: 700;
-  cursor: pointer;
-  transition: all 0.3s;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-}
-
-.bcPrivileges-confirm-btn:hover {
-  background: linear-gradient(135deg, #059669, #047857);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
-}
-
-.bcPrivileges-decline-btn {
-  padding: 10px 16px;
-  background: linear-gradient(135deg, #ef4444, #dc2626);
-  color: white;
+  text-align: center;
   border: none;
-  border-radius: 8px;
-  font-size: 12px;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.3s;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.bcPrivileges-decline-btn:hover {
-  background: linear-gradient(135deg, #dc2626, #b91c1c);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+  cursor: default;
 }
 
 /* Loading State */
-.bcPrivileges-loading {
+.bcMyRides-loading {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -274,29 +233,29 @@
   gap: 20px;
 }
 
-.bcPrivileges-spinner {
+.bcMyRides-spinner {
   width: 40px;
   height: 40px;
   border: 4px solid rgba(99, 102, 241, 0.2);
   border-left: 4px solid #6366f1;
   border-radius: 50%;
-  animation: spinPrivileges 1s linear infinite;
+  animation: spinMyRides 1s linear infinite;
 }
 
-@keyframes spinPrivileges {
+@keyframes spinMyRides {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
 }
 
-.bcPrivileges-loading p {
+.bcMyRides-loading p {
   font-size: 18px;
   font-weight: 600;
   color: #1e293b;
 }
 
 /* Error and No Rides States */
-.bcPrivileges-error,
-.bcPrivileges-no-rides {
+.bcMyRides-error,
+.bcMyRides-no-rides {
   text-align: center;
   padding: 60px 20px;
   background: rgba(255, 255, 255, 0.9);
@@ -306,27 +265,27 @@
   max-width: 500px;
 }
 
-.bcPrivileges-no-rides-icon {
+.bcMyRides-no-rides-icon {
   font-size: 64px;
   margin-bottom: 20px;
 }
 
-.bcPrivileges-error h2,
-.bcPrivileges-no-rides h3 {
+.bcMyRides-error h2,
+.bcMyRides-no-rides h3 {
   font-size: 24px;
   font-weight: 700;
   color: #1e293b;
   margin-bottom: 12px;
 }
 
-.bcPrivileges-error p,
-.bcPrivileges-no-rides p {
+.bcMyRides-error p,
+.bcMyRides-no-rides p {
   color: #64748b;
   margin-bottom: 24px;
   line-height: 1.6;
 }
 
-.bcPrivileges-back-btn {
+.bcMyRides-back-btn {
   padding: 12px 24px;
   background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
   color: white;
@@ -337,39 +296,34 @@
   transition: all 0.3s;
 }
 
-.bcPrivileges-back-btn:hover {
+.bcMyRides-back-btn:hover {
   background: linear-gradient(135deg, #5856eb 0%, #7c3aed 100%);
   transform: translateY(-2px);
 }
 
 /* Content Wrapper */
-.bcPrivileges-content-wrapper {
+.bcMyRides-content-wrapper {
   width: 100%;
 }
 
 /* Responsive Design */
 @media (max-width: 768px) {
-  .bcPrivileges-main-content {
+  .bcMyRides-main-content {
     padding: 16px;
   }
 
-  .bcPrivileges-card-content {
+  .bcMyRides-card-content {
     grid-template-columns: 1fr;
     gap: 16px;
   }
 
-  .bcPrivileges-price-actions {
+  .bcMyRides-price-status {
     flex-direction: row;
     justify-content: space-between;
     align-items: center;
   }
 
-  .bcPrivileges-action-buttons {
-    flex-direction: column;
-    gap: 8px;
-  }
-
-  .bcPrivileges-time-info {
+  .bcMyRides-time-info {
     flex-direction: column;
     align-items: flex-start;
     gap: 8px;
@@ -377,24 +331,21 @@
 }
 
 @media (max-width: 480px) {
-  .bcPrivileges-search-section {
+  .bcMyRides-header-section {
     padding: 16px;
   }
 
-  .bcPrivileges-card {
+  .bcMyRides-card {
     padding: 16px;
   }
 
-  .bcPrivileges-header-title {
+  .bcMyRides-header-section h1 {
     font-size: 24px;
   }
 
-  .bcPrivileges-action-buttons {
-    width: 100%;
-  }
-
-  .bcPrivileges-confirm-btn,
-  .bcPrivileges-decline-btn {
-    flex: 1;
+  .bcMyRides-time-info {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
   }
 }

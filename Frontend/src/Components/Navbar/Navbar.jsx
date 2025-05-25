@@ -21,13 +21,9 @@ const Navbar = () => {
     };
     fetchUserName();
     
-    // Fetch unread notification count
     fetchUnreadCount();
+    const intervalId = setInterval(fetchUnreadCount, 30000);
     
-    // Set up interval to periodically check for new notifications
-    const intervalId = setInterval(fetchUnreadCount, 30000); // Check every 30 seconds
-    
-    // Listen for notification read events
     const handleNotificationRead = () => {
       fetchUnreadCount();
     };
@@ -35,10 +31,10 @@ const Navbar = () => {
     window.addEventListener('notificationRead', handleNotificationRead);
     
     return () => {
-      clearInterval(intervalId); // Clean up on unmount
+      clearInterval(intervalId);
       window.removeEventListener('notificationRead', handleNotificationRead);
     };
-  }, []);
+  }, [currentUser, fetchUserDetails]);
   
   const fetchUnreadCount = async () => {
     try {
@@ -54,26 +50,47 @@ const Navbar = () => {
     setShowDropdown(false);
   };
 
-  const handleSignOut = () => {
-    logout();
+  const handleMyRides = () => {
+    navigate('/my-rides');
     setShowDropdown(false);
-    navigate('/login');
   };
 
-  // Handle BroCab click - go to dashboard and scroll to top
+  const handleSignOut = async () => {
+    try {
+      await logout();
+      setShowDropdown(false);
+      localStorage.clear();
+      sessionStorage.clear();
+      navigate('/login');
+    } catch (error) {
+      console.error('Error signing out:', error);
+      setShowDropdown(false);
+      navigate('/login');
+    }
+  };
+
   const handleBrandClick = () => {
     if (location.pathname === '/dashboard') {
-      // If already on dashboard, scroll to top
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } else {
-      // Navigate to dashboard
       navigate('/dashboard');
     }
   };
 
+  // Add delay to prevent flickering
+  const handleMouseEnter = () => {
+    setShowDropdown(true);
+  };
+
+  const handleMouseLeave = () => {
+    // Add a small delay before closing to prevent flickering
+    setTimeout(() => {
+      setShowDropdown(false);
+    }, 100);
+  };
+
   return (
     <nav className="bcDash-navbar">
-      {/* Make BroCab clickable */}
       <div 
         className="bcDash-nav-brand" 
         onClick={handleBrandClick}
@@ -82,7 +99,12 @@ const Navbar = () => {
       </div>
       
       <div className="bcDash-nav-links">
-        <a href="#" className="bcDash-nav-link">My Rides</a>
+        <button 
+          onClick={() => navigate('/my-booked-rides')} 
+          className="bcDash-nav-link bcDash-nav-button"
+        >
+          My Bookings
+        </button>
         <button 
           onClick={() => navigate('/privileges')}
           className="bcDash-nav-link bcDash-nav-button"
@@ -116,8 +138,8 @@ const Navbar = () => {
             </button>
             <div 
               className="bcDash-user-dropdown-wrapper"
-              onMouseEnter={() => setShowDropdown(true)}
-              onMouseLeave={() => setShowDropdown(false)}
+              onMouseEnter={handleMouseEnter}
+              onMouseLeave={handleMouseLeave}
             >
               <div className="bcDash-profile-icon">
                 <span className="bcDash-profile-initial">
@@ -125,7 +147,14 @@ const Navbar = () => {
                 </span>
               </div>
               {showDropdown && (
-                <div className="bcDash-user-dropdown">
+                <div 
+                  className="bcDash-user-dropdown"
+                  onMouseEnter={() => setShowDropdown(true)}
+                  onMouseLeave={handleMouseLeave}
+                >
+                  <button onClick={handleMyRides} className="bcDash-dropdown-item">
+                    My Rides
+                  </button>
                   <button onClick={handleUpdateProfile} className="bcDash-dropdown-item">
                     Update Profile
                   </button>
