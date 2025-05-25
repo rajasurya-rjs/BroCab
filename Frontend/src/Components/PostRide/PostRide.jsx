@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { MapPin, Calendar, Clock, Users, DollarSign, User, CheckCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../firebase/AuthContext";
+import { useAuth } from "../../firebase/AuthContext";
 
 const BrocabRouteBackground = () => (
   <svg
@@ -515,38 +515,34 @@ const PostRidePage = ({ onSubmit }) => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (e) => {
+    if (e) e.preventDefault();
     if (!currentUser) {
       alert("You must log in before posting a ride.");
       navigate("/login");
       return;
     }
-
     if (!validateForm()) {
       return;
     }
-
     setLoading(true);
-
     try {
       const response = await fetch("http://localhost:8080/ride", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${await getIdToken()}`, // Use getIdToken from AuthContext
+          "Authorization": `Bearer ${await getIdToken()}`,
         },
         body: JSON.stringify({
           ...form,
-          leader: undefined, // Exclude leader name from the backend payload
-          seats: parseInt(form.seats, 10), // Ensure seats is sent as an integer
-          price: parseFloat(form.price),  // Ensure price is sent as a float
+          leader: undefined,
+          seats: parseInt(form.seats, 10),
+          price: parseFloat(form.price),
         }),
       });
-
       if (!response.ok) {
         throw new Error("Failed to post ride.");
       }
-
       setRideDetails({
         origin: form.origin,
         destination: form.destination,
@@ -556,9 +552,7 @@ const PostRidePage = ({ onSubmit }) => {
       });
       setSuccess(true);
       setLoading(false);
-
       if (onSubmit) onSubmit(form);
-
       setForm({
         origin: "",
         destination: "",
@@ -567,8 +561,7 @@ const PostRidePage = ({ onSubmit }) => {
         seats: "",
         price: "",
       });
-
-      navigate("/my-rides"); // Navigate to My Rides page after successful ride creation
+      // Do not navigate immediately; wait for user to close popup
     } catch (error) {
       alert(error.message);
       setLoading(false);
@@ -666,88 +659,89 @@ const PostRidePage = ({ onSubmit }) => {
             <div style={styles.decorativeElement1}></div>
             <div style={styles.decorativeElement2}></div>
           </div>
-
           {/* Form */}
           <div style={styles.formContainer}>
-            <div style={getGridStyle()}>
-              {inputFields.map((field) => {
-                const Icon = field.icon;
-                const isActive = focusField === field.name;
-                
-                return (
-                  <div 
-                    key={field.name} 
-                    style={{
-                      ...styles.fieldContainer,
-                      ...(field.fullWidth ? styles.fieldContainerFull : {})
-                    }}
-                  >
-                    <label style={styles.label}>
-                      <Icon style={styles.labelIcon} />
-                      {field.label}
-                    </label>
-                    
-                    <div style={styles.inputWrapper}>
-                      <input
-                        type={field.type}
-                        name={field.name}
-                        value={form[field.name]}
-                        onChange={handleChange}
-                        placeholder={field.placeholder}
-                        min={field.min}
-                        required
-                        disabled={field.disabled || loading}
-                        style={getInputStyle(field.name, field.disabled)}
-                        onFocus={() => setFocusField(field.name)}
-                        onBlur={() => setFocusField("")}
-                        onMouseEnter={() => handleMouseEnter(field.name)}
-                        onMouseLeave={() => handleMouseLeave(field.name)}
-                      />
+            <form onSubmit={handleSubmit}>
+              <div style={getGridStyle()}>
+                {inputFields.map((field) => {
+                  const Icon = field.icon;
+                  const isActive = focusField === field.name;
+                  
+                  return (
+                    <div 
+                      key={field.name} 
+                      style={{
+                        ...styles.fieldContainer,
+                        ...(field.fullWidth ? styles.fieldContainerFull : {})
+                      }}
+                    >
+                      <label style={styles.label}>
+                        <Icon style={styles.labelIcon} />
+                        {field.label}
+                      </label>
                       
-                      {isActive && <div style={styles.focusIndicator}></div>}
+                      <div style={styles.inputWrapper}>
+                        <input
+                          type={field.type}
+                          name={field.name}
+                          value={form[field.name]}
+                          onChange={handleChange}
+                          placeholder={field.placeholder}
+                          min={field.min}
+                          required
+                          disabled={field.disabled || loading}
+                          style={getInputStyle(field.name, field.disabled)}
+                          onFocus={() => setFocusField(field.name)}
+                          onBlur={() => setFocusField("")}
+                          onMouseEnter={() => handleMouseEnter(field.name)}
+                          onMouseLeave={() => handleMouseLeave(field.name)}
+                        />
+                        
+                        {isActive && <div style={styles.focusIndicator}></div>}
+                      </div>
+                      {errors[field.name] && <div style={{ color: 'red', fontSize: '12px', marginTop: '4px' }}>{errors[field.name]}</div>}
                     </div>
-                    {errors[field.name] && <div style={{ color: 'red', fontSize: '12px', marginTop: '4px' }}>{errors[field.name]}</div>}
-                  </div>
-                );
-              })}
-            </div>
-
-            {/* Success Message */}
-            {success && (
-              <div style={styles.successMessage}>
-                <CheckCircle style={styles.successIcon} />
-                <div style={styles.successContent}>
-                  <h3 style={styles.successTitle}>Ride Posted Successfully!</h3>
-                  <p style={styles.successText}>Your ride is now live and others can request to join your journey.</p>
-                </div>
+                  );
+                })}
               </div>
-            )}
 
-            {/* Submit Button */}
-            <button
-              onClick={handleSubmit}
-              disabled={loading || success}
-              style={getButtonStyle()}
-              onMouseEnter={() => handleMouseEnter('submitButton')}
-              onMouseLeave={() => handleMouseLeave('submitButton')}
-            >
-              {loading ? (
-                <>
-                  <div style={styles.spinner}></div>
-                  Posting Ride...
-                </>
-              ) : success ? (
-                <>
-                  <CheckCircle style={styles.buttonIcon} />
-                  Posted Successfully!
-                </>
-              ) : (
-                <>
-                  <MapPin style={styles.buttonIcon} />
-                  Post My Ride
-                </>
+              {/* Success Message */}
+              {success && (
+                <div style={styles.successMessage}>
+                  <CheckCircle style={styles.successIcon} />
+                  <div style={styles.successContent}>
+                    <h3 style={styles.successTitle}>Ride Posted Successfully!</h3>
+                    <p style={styles.successText}>Your ride is now live and others can request to join your journey.</p>
+                  </div>
+                </div>
               )}
-            </button>
+
+              {/* Submit Button */}
+              <button
+                type="submit"
+                disabled={loading || success}
+                style={getButtonStyle()}
+                onMouseEnter={() => handleMouseEnter('submitButton')}
+                onMouseLeave={() => handleMouseLeave('submitButton')}
+              >
+                {loading ? (
+                  <>
+                    <div style={styles.spinner}></div>
+                    Posting Ride...
+                  </>
+                ) : success ? (
+                  <>
+                    <CheckCircle style={styles.buttonIcon} />
+                    Posted Successfully!
+                  </>
+                ) : (
+                  <>
+                    <MapPin style={styles.buttonIcon} />
+                    Post My Ride
+                  </>
+                )}
+              </button>
+            </form>
 
             {/* Info Cards */}
             <div style={getInfoSectionStyle()}>
@@ -801,9 +795,11 @@ const PostRidePage = ({ onSubmit }) => {
             <p style={{ fontSize: "16px", marginBottom: "10px" }}><strong>Available Seats:</strong> {rideDetails.seats}</p>
             <p style={{ fontSize: "16px", marginBottom: "20px" }}><strong>Price:</strong> ₹{rideDetails.price}</p>
             <button
-              onClick={() => {
+              onClick={(e) => {
+                e.preventDefault();
                 setRideDetails(null);
-                setSuccess(false); // Reset success state to change button color back
+                setSuccess(false);
+                navigate("/my-rides");
               }}
               style={{
                 padding: "12px 24px",
