@@ -11,53 +11,9 @@ const Privileges = () => {
   const [error, setError] = useState(null);
   const { currentUser, getIdToken } = useAuth();
 
-  // Demo data for testing
-  const demoData = [
-    {
-      request_id: 1,
-      ride_id: 101,
-      origin: "Campus",
-      destination: "Airport",
-      date: "2025-05-26",
-      time: "14:30",
-      price: 500,
-      seats_available: 2,
-      total_seats: 4,
-      can_join: true
-    },
-    {
-      request_id: 2,
-      ride_id: 102,
-      origin: "Downtown",
-      destination: "Mall",
-      date: "2025-05-27",
-      time: "16:45",
-      price: 300,
-      seats_available: 1,
-      total_seats: 4,
-      can_join: true
-    },
-    {
-      request_id: 3,
-      ride_id: 103,
-      origin: "University",
-      destination: "Train Station",
-      date: "2025-05-28",
-      time: "09:15",
-      price: 400,
-      seats_available: 3,
-      total_seats: 5,
-      can_join: true
-    }
-  ];
-
   useEffect(() => {
     if (currentUser) {
-      // Use demo data instead of API call for testing
-      setTimeout(() => {
-        setPrivilegeRides(demoData);
-        setLoading(false);
-      }, 1000); // Simulate loading time
+      fetchPrivilegeRides();
     }
   }, [currentUser]);
 
@@ -66,20 +22,13 @@ const Privileges = () => {
       setLoading(true);
       setError(null);
       
-      // For demo purposes, just use the demo data
-      setTimeout(() => {
-        setPrivilegeRides(demoData);
-        setLoading(false);
-      }, 1000);
-
-      /* 
-      // Uncomment this when you want to use real API
       const token = await getIdToken();
       
       if (!token) {
         throw new Error('No authentication token available');
       }
 
+      // API call to get user privileges
       const response = await fetch('http://localhost:8080/user/privileges', {
         method: 'GET',
         headers: {
@@ -98,9 +47,9 @@ const Privileges = () => {
       const data = await response.json();
       console.log('Privilege Rides API Response:', data);
       
+      // Filter only rides where can_join is true (accepted rides needing confirmation)
       const acceptedRides = Array.isArray(data) ? data.filter(ride => ride.can_join === true) : [];
       setPrivilegeRides(acceptedRides);
-      */
     } catch (error) {
       console.error('Error fetching privilege rides:', error);
       if (error.message.includes('Authentication failed')) {
@@ -116,12 +65,6 @@ const Privileges = () => {
 
   const handleConfirmRide = async (requestId, rideId) => {
     try {
-      // Demo: Just remove from list and show alert
-      setPrivilegeRides(prev => prev.filter(ride => ride.request_id !== requestId));
-      alert(`Demo: Ride ${rideId} confirmed successfully! (Request ID: ${requestId})`);
-      
-      /* 
-      // Uncomment this when you want to use real API
       const token = await getIdToken();
       
       if (!token) {
@@ -147,24 +90,23 @@ const Privileges = () => {
         throw new Error(errorData.message || 'Failed to confirm ride');
       }
 
+      // Remove confirmed ride from the list
       setPrivilegeRides(prev => prev.filter(ride => ride.request_id !== requestId));
       alert('Ride confirmed successfully! You will receive further details soon.');
-      */
       
     } catch (error) {
       console.error('Error confirming ride:', error);
-      alert(`Failed to confirm ride: ${error.message}`);
+      if (error.message.includes('Authentication failed')) {
+        alert('Session expired. Please login again.');
+        window.location.href = '/login';
+      } else {
+        alert(`Failed to confirm ride: ${error.message}`);
+      }
     }
   };
 
   const handleDeclineRide = async (requestId, rideId) => {
     try {
-      // Demo: Just remove from list and show alert
-      setPrivilegeRides(prev => prev.filter(ride => ride.request_id !== requestId));
-      alert(`Demo: Ride ${rideId} declined! (Request ID: ${requestId})`);
-      
-      /* 
-      // Uncomment this when you want to use real API
       const token = await getIdToken();
       
       if (!token) {
@@ -190,13 +132,18 @@ const Privileges = () => {
         throw new Error(errorData.message || 'Failed to decline ride');
       }
 
+      // Remove declined ride from the list
       setPrivilegeRides(prev => prev.filter(ride => ride.request_id !== requestId));
       alert('Ride declined. The leader has been notified.');
-      */
       
     } catch (error) {
       console.error('Error declining ride:', error);
-      alert(`Failed to decline ride: ${error.message}`);
+      if (error.message.includes('Authentication failed')) {
+        alert('Session expired. Please login again.');
+        window.location.href = '/login';
+      } else {
+        alert(`Failed to decline ride: ${error.message}`);
+      }
     }
   };
 
