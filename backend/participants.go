@@ -19,7 +19,7 @@ type Participant struct {
 	UpdatedAt time.Time
 }
 
-// GET /ride/:rideID/participants - Get all participants in a ride (accessible to anyone)
+// GET /ride/:rideID/participants - Get all participants in a ride with leader-specific details
 func GetRideParticipants(c *gin.Context) {
 	rideIDParam := c.Param("rideID")
 	rideID, err := strconv.Atoi(rideIDParam)
@@ -28,6 +28,8 @@ func GetRideParticipants(c *gin.Context) {
 		return
 	}
 
+	userID := c.MustGet("uid").(string)
+
 	// Check if the ride exists
 	var ride Ride
 	if err := DB.First(&ride, "id = ?", rideID).Error; err != nil {
@@ -35,14 +37,23 @@ func GetRideParticipants(c *gin.Context) {
 		return
 	}
 
-	// Fetch all participants for the ride (no leader check - accessible to anyone)
+	// Get current user to check if they are the leader
+	currentUser, err := getUser(userID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+		return
+	}
+
+	isLeader := ride.LeaderID == currentUser.ID
+
+	// Fetch all participants for the ride
 	var participants []Participant
 	if err := DB.Where("ride_id = ?", rideID).Find(&participants).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch participants"})
 		return
 	}
 
-	// Build response with participant details
+	// Build response with participant details (phone number only for leaders)
 	var response []map[string]interface{}
 	for _, p := range participants {
 		user, err := getUser(p.UserID)
@@ -56,6 +67,12 @@ func GetRideParticipants(c *gin.Context) {
 			"gender":         user.Gender,
 			"joined_at":      p.JoinedAt,
 		}
+
+		// Only include phone number if the current user is the ride leader
+		if isLeader {
+			entry["phone"] = user.Phone
+		}
+
 		response = append(response, entry)
 	}
 

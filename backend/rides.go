@@ -57,6 +57,24 @@ func AddRide(c *gin.Context) {
 		return
 	}
 
+	// Check if user has sent any join requests on the same date
+	var existingRequestCount int64
+	if err := DB.Table("requests").
+		Joins("JOIN rides ON requests.ride_id = rides.id").
+		Where("requests.user_id = ? AND rides.date = ? AND requests.status IN ?",
+			userID.(string), ride.Date, []string{"pending", "approved"}).
+		Count(&existingRequestCount).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to check existing requests"})
+		return
+	}
+
+	if existingRequestCount > 0 {
+		c.JSON(http.StatusConflict, gin.H{
+			"error": "You cannot create a ride and send join requests on the same day. You have already sent requests for rides on " + ride.Date,
+		})
+		return
+	}
+
 	ride.SeatsFilled = 0
 
 	if err := DB.Create(&ride).Error; err != nil {

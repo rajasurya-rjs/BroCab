@@ -5,22 +5,22 @@ const API_BASE_URL = 'http://localhost:8080';
 
 // Get auth token from Firebase user with better error handling
 const getAuthToken = async () => {
-  return new Promise((resolve) => {
-    const unsubscribe = auth.onAuthStateChanged(async (user) => {
-      unsubscribe(); // Unsubscribe immediately
-      if (user) {
-        try {
-          const token = await user.getIdToken(true); // Force refresh
-          resolve(token);
-        } catch (error) {
-          console.error('Error getting auth token:', error);
-          resolve(null);
-        }
-      } else {
-        resolve(null);
-      }
-    });
-  });
+  try {
+    // Get current user directly from auth
+    const user = auth.currentUser;
+    
+    if (user) {
+      const token = await user.getIdToken(true); // Force refresh
+      console.log('Successfully got auth token:', token.substring(0, 20) + '...');
+      return token;
+    } else {
+      console.warn('No authenticated user found');
+      return null;
+    }
+  } catch (error) {
+    console.error('Error getting auth token:', error);
+    return null;
+  }
 };
 
 // Generic API call function with automatic token attachment
@@ -41,19 +41,26 @@ export const apiCall = async (endpoint, options = {}) => {
 
   const url = endpoint.startsWith('http') ? endpoint : `${API_BASE_URL}${endpoint}`;
 
-  console.log('Making API call to:', url, 'with headers:', headers);
+  console.log('Making API call to:', url, 'with method:', options.method || 'GET');
 
-  const response = await fetch(url, {
-    ...options,
-    headers,
-  });
+  try {
+    const response = await fetch(url, {
+      ...options,
+      headers,
+    });
 
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({ error: 'Network error' }));
-    throw new Error(error.error || `HTTP error! status: ${response.status}`);
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ 
+        error: `HTTP error! status: ${response.status}` 
+      }));
+      throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+    }
+
+    return response;
+  } catch (error) {
+    console.error('API call error:', error);
+    throw error;
   }
-
-  return response;
 };
 
 // Specific API functions for your backend
@@ -87,14 +94,40 @@ export const userAPI = {
 
   // Get user privileges
   getPrivileges: async () => {
-    const response = await apiCall('/user/privileges');
+    try {
+      console.log('Calling privileges endpoint');
+      const response = await apiCall('/user/privileges');
+      const data = await response.json();
+      console.log('Raw privileges response:', data);
+      return data;
+    } catch (err) {
+      console.error('Error in getPrivileges:', err);
+      throw err;
+    }
+  },
+
+  // Get user's sent join requests
+  getSentRequests: async () => {
+    const response = await apiCall('/user/requests');
     return response.json();
   },
 
   // Get notifications
   getNotifications: async () => {
-    const response = await apiCall('/user/notifications');
-    return response.json();
+    try {
+      console.log('userAPI.getNotifications: Starting request...');
+      const response = await apiCall('/user/notifications');
+      console.log('userAPI.getNotifications: Got response:', response);
+      console.log('userAPI.getNotifications: Response status:', response.status);
+      console.log('userAPI.getNotifications: Response headers:', response.headers);
+      
+      const data = await response.json();
+      console.log('userAPI.getNotifications: Parsed JSON data:', data);
+      return data;
+    } catch (error) {
+      console.error('userAPI.getNotifications: Error occurred:', error);
+      throw error;
+    }
   },
 
   // Get unread notification count
@@ -106,6 +139,14 @@ export const userAPI = {
   // Cancel ride participation (unified - handles both pending requests and participation)
   cancelRide: async (rideID) => {
     const response = await apiCall(`/user/cancel-ride/${rideID}`, {
+      method: 'DELETE',
+    });
+    return response.json();
+  },
+
+  // Clear involvement for a specific date (requests and privileges)
+  clearInvolvementForDate: async (date) => {
+    const response = await apiCall(`/user/clear-involvement/${date}`, {
       method: 'DELETE',
     });
     return response.json();
