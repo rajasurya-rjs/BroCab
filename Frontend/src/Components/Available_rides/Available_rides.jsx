@@ -9,27 +9,32 @@ const BACKGROUND_IMAGE = '/backgroundimg.png';
 const Available_rides = () => {
   const [rides, setRides] = useState([]);
   const [requestedRides, setRequestedRides] = useState(new Set());
+  const [bookedRides, setBookedRides] = useState(new Set());
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [selectedRide, setSelectedRide] = useState(null);
   const [rideDetails, setRideDetails] = useState(null);
   const [loadingDetails, setLoadingDetails] = useState(false);
+  const [processingRequests, setProcessingRequests] = useState(new Set());
   
   const location = useLocation();
   const navigate = useNavigate();
   
-  // Use the auth context - get all needed functions at component level
   const { apiCall, currentUser, getIdToken } = useAuth();
 
-  // Get initial search parameters from URL
   const urlParams = new URLSearchParams(location.search);
   
-  // Search form state
   const [searchForm, setSearchForm] = useState({
     origin: urlParams.get('origin')?.trim() || '',
     destination: urlParams.get('destination')?.trim() || '',
     date: urlParams.get('date')?.trim() || ''
   });
+
+  // Debug state changes
+  useEffect(() => {
+    console.log('Requested rides updated:', Array.from(requestedRides));
+    console.log('Booked rides updated:', Array.from(bookedRides));
+  }, [requestedRides, bookedRides]);
 
   // Function to get coordinates from location name using Nominatim (free geocoding)
   const getCoordinates = async (locationName) => {
@@ -62,7 +67,6 @@ const Available_rides = () => {
         return { distance: null, duration: null };
       }
 
-      // OSRM Route API call for both distance and duration
       const osrmUrl = `https://router.project-osrm.org/route/v1/driving/${originCoords.lon},${originCoords.lat};${destCoords.lon},${destCoords.lat}?overview=false&alternatives=false&steps=false`;
       
       const response = await fetch(osrmUrl);
@@ -97,16 +101,72 @@ const Available_rides = () => {
 
   // Function to calculate approximate price per person
   const calculateApproxPrice = (totalPrice, totalSeats, filledSeats) => {
-    const passengerSeats = totalSeats - 1; // Exclude driver
+    const passengerSeats = totalSeats - 1;
     const filledPassengerSeats = filledSeats;
     const divisor = filledPassengerSeats === 0 ? passengerSeats : filledPassengerSeats + 1;
     const exactPrice = totalPrice / divisor;
-    
-    // Round to nearest 10 for approximate pricing
     return Math.round(exactPrice / 10) * 10;
   };
 
-  // Function to fetch ride details and participants using auth context
+  // Fetch user's requested rides
+  const fetchRequestedRides = useCallback(async () => {
+    try {
+      const token = await getIdToken();
+      if (!token) return;
+
+      const response = await fetch('https://brocab.onrender.com/user/requests', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log('Requested rides API response:', data);
+        const requestedRideIds = new Set(
+          Array.isArray(data) ? data.map(r => r.ride_id) : []
+        );
+        console.log('Setting requested ride IDs:', Array.from(requestedRideIds));
+        setRequestedRides(requestedRideIds);
+      }
+    } catch (error) {
+      console.error('Error fetching requested rides:', error);
+      setRequestedRides(new Set());
+    }
+  }, [getIdToken]);
+
+  // Fetch user's booked rides
+  const fetchBookedRides = useCallback(async () => {
+    try {
+      const token = await getIdToken();
+      if (!token) return;
+
+      const response = await fetch('https://brocab.onrender.com/user/rides/joined', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log('Booked rides API response:', data);
+        const bookedRideIds = new Set(
+          Array.isArray(data) ? data.map(r => r.ride_id || r.leader_id) : []
+        );
+        console.log('Setting booked ride IDs:', Array.from(bookedRideIds));
+        setBookedRides(bookedRideIds);
+      }
+    } catch (error) {
+      console.error('Error fetching booked rides:', error);
+      setBookedRides(new Set());
+    }
+  }, [getIdToken]);
+
+  // Function to fetch ride details and participants
   const fetchRideDetails = async (rideId) => {
     try {
       setLoadingDetails(true);
@@ -144,7 +204,6 @@ const Available_rides = () => {
       return;
     }
 
-    // Check if user is authenticated
     if (!currentUser) {
       setError('Please login to search for rides.');
       navigate('/login');
@@ -155,7 +214,6 @@ const Available_rides = () => {
       setLoading(true);
       setError(null);
       
-      // Build API URL with query parameters
       const apiParams = new URLSearchParams({
         origin: searchForm.origin.trim(),
         destination: searchForm.destination.trim(),
@@ -165,12 +223,10 @@ const Available_rides = () => {
       const apiUrl = `https://brocab.onrender.com/ride/filter?${apiParams.toString()}`;
       console.log('Making API call to:', apiUrl);
       
-      // Use the auth context's apiCall method
       const response = await apiCall(apiUrl);
       const data = await response.json();
       console.log('API Response received:', data);
       
-      // Process rides and add route information
       let ridesData = [];
       if (data && typeof data === 'object' && !Array.isArray(data)) {
         ridesData = [data];
@@ -178,7 +234,6 @@ const Available_rides = () => {
         ridesData = data;
       }
 
-      // Calculate route info for each ride
       const ridesWithRouteInfo = await Promise.all(
         ridesData.map(async (ride) => {
           const routeInfo = await calculateRouteInfo(ride.origin, ride.destination);
@@ -215,8 +270,19 @@ const Available_rides = () => {
 
   // Use effect with proper dependency array
   useEffect(() => {
-    fetchAvailableRides();
-  }, [fetchAvailableRides]);
+    if (currentUser) {
+      fetchAvailableRides();
+      fetchRequestedRides();
+      fetchBookedRides();
+    }
+  }, [currentUser]);
+
+  // Separate useEffect for search form changes
+  useEffect(() => {
+    if (currentUser && searchForm.origin && searchForm.destination && searchForm.date) {
+      fetchAvailableRides();
+    }
+  }, [searchForm, currentUser, fetchAvailableRides]);
 
   // Handle input changes
   const handleInputChange = (e) => {
@@ -277,13 +343,11 @@ const Available_rides = () => {
       const departure = new Date();
       departure.setHours(parseInt(hours), parseInt(minutes), 0, 0);
       
-      // If we have calculated duration, use it; otherwise use database duration
       let durationToAdd = duration;
       if (!durationToAdd || durationToAdd === 'N/A') {
         return 'N/A';
       }
       
-      // Parse duration (could be "1h 30m" or "45m" format)
       let totalMinutes = 0;
       if (durationToAdd.includes('h')) {
         const parts = durationToAdd.split(' ');
@@ -307,19 +371,66 @@ const Available_rides = () => {
     }
   };
 
-  // CORRECTED handleBookRide function
+  // Check if ride is already booked or requested
+  const isRideBlocked = (rideId) => {
+    const blocked = bookedRides.has(rideId) || requestedRides.has(rideId);
+    console.log(`Ride ${rideId} blocked:`, blocked, {
+      booked: bookedRides.has(rideId),
+      requested: requestedRides.has(rideId)
+    });
+    return blocked;
+  };
+
+  // Get button text based on ride status
+  const getButtonText = (rideId, ride) => {
+    console.log(`Getting button text for ride ${rideId}:`, {
+      isBooked: bookedRides.has(rideId),
+      isRequested: requestedRides.has(rideId),
+      isProcessing: processingRequests.has(rideId),
+      isFullyBooked: ((ride.seats || 4) - 1) - (ride.seats_filled || 0) === 0
+    });
+
+    if (bookedRides.has(rideId)) return 'ALREADY BOOKED';
+    if (requestedRides.has(rideId)) return 'ALREADY REQUESTED';
+    if (processingRequests.has(rideId)) return 'PROCESSING...';
+    if (((ride.seats || 4) - 1) - (ride.seats_filled || 0) === 0) return 'FULLY BOOKED';
+    return 'REQUEST NOW';
+  };
+
+  // Enhanced handleBookRide function with blocking logic
   const handleBookRide = async (rideId) => {
+    console.log(`handleBookRide called for ride ${rideId}`);
+    
+    // Check if ride is already booked
+    if (bookedRides.has(rideId)) {
+      alert('You have already booked this ride!');
+      return;
+    }
+
+    // Check if ride is already requested
+    if (requestedRides.has(rideId)) {
+      alert('You have already requested to join this ride!');
+      return;
+    }
+
+    // Check if request is already being processed
+    if (processingRequests.has(rideId)) {
+      alert('Request is already being processed. Please wait...');
+      return;
+    }
+
     try {
-      console.log(`Requesting to join ride with ID: ${rideId}`);
-      
-      // Get the ID token using the hook function at component level
+      // Add to processing set to prevent duplicate clicks
+      setProcessingRequests(prev => new Set(prev).add(rideId));
+      console.log(`Added ride ${rideId} to processing set`);
+
       const token = await getIdToken();
       
       if (!token) {
         throw new Error('No authentication token available');
       }
 
-      // Make POST request to join the ride with Bearer token
+      console.log(`Making join request for ride ${rideId}`);
       const response = await fetch(`https://brocab.onrender.com/ride/${rideId}/join`, {
         method: 'POST',
         headers: {
@@ -328,6 +439,8 @@ const Available_rides = () => {
         }
       });
 
+      console.log(`Join request response status: ${response.status}`);
+
       if (!response.ok) {
         if (response.status === 401) {
           throw new Error('Authentication failed. Please login again.');
@@ -335,21 +448,36 @@ const Available_rides = () => {
           const errorData = await response.json();
           throw new Error(errorData.error || 'Bad request');
         } else if (response.status === 409) {
+          // Already requested - update state anyway
+          console.log(`Ride ${rideId} already requested, updating state`);
+          setRequestedRides(prev => new Set(prev).add(rideId));
           throw new Error('You have already requested to join this ride');
         }
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
       const result = await response.json();
-      alert(`Join request sent successfully! ${result.message || 'You will be notified when the driver responds.'}`);
+      console.log('Join request successful:', result);
       
-      // Refresh the rides list to update availability
-      fetchAvailableRides();
+      // IMMEDIATELY update the requested rides state
+      setRequestedRides(prev => {
+        const newSet = new Set(prev);
+        newSet.add(rideId);
+        console.log(`Added ride ${rideId} to requested rides. New set:`, Array.from(newSet));
+        return newSet;
+      });
+      
+      alert(`Join request sent successfully! ${result.message || 'You will be notified when the driver responds.'}`);
       
       // Close modal if open
       if (selectedRide) {
         closeModal();
       }
+      
+      // Refresh data after a short delay
+      setTimeout(() => {
+        fetchRequestedRides();
+      }, 1000);
       
     } catch (error) {
       console.error('Join request error:', error);
@@ -359,6 +487,14 @@ const Available_rides = () => {
       } else {
         alert(`Failed to send join request: ${error.message}`);
       }
+    } finally {
+      // Remove from processing set
+      setProcessingRequests(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(rideId);
+        console.log(`Removed ride ${rideId} from processing set`);
+        return newSet;
+      });
     }
   };
 
@@ -375,7 +511,6 @@ const Available_rides = () => {
     });
   };
 
-  // Show login prompt if user is not authenticated
   if (!currentUser) {
     return (
       <div className="bcRides-container" style={{ backgroundImage: `url(${BACKGROUND_IMAGE})` }}>
@@ -493,71 +628,77 @@ const Available_rides = () => {
                 </div>
               ) : (
                 <div className="bcRides-list">
-                  {rides.map((ride, index) => (
-                    <div 
-                      key={ride.id || index} 
-                      className="bcRides-card bcRides-clickable"
-                      onClick={() => handleRideClick(ride)}
-                    >
-                      <div className="bcRides-card-content">
-                        <div className="bcRides-time-route">
-                          <div className="bcRides-time-info">
-                            <span className="bcRides-departure-time">{formatTime(ride.time)}</span>
-                            <span className="bcRides-duration">
-                              {ride.calculatedDuration || ride.duration || 'N/A'}
-                            </span>
-                            <span className="bcRides-arrival-time">
-                              {calculateArrivalTime(ride.time, ride.calculatedDuration || ride.duration)}
-                            </span>
-                          </div>
-                          <div className="bcRides-route-info">
-                            <span className="bcRides-route-text">
-                              {ride.origin} - {ride.destination}
-                              {ride.distance && <span className="bcRides-distance"> • {ride.distance} km</span>}
-                            </span>
-                          </div>
-                        </div>
-
-                        <div className="bcRides-vehicle-info">
-                          <div className="bcRides-vehicle-details">
-                            <span className="bcRides-vehicle-type">{ride.vehicle_type || 'Car'}</span>
-                            <div className="bcRides-seats-display">
-                              <span className="bcRides-seats-text">
-                                {((ride.seats || 4) - 1) - (ride.seats_filled || 0)} seats available
+                  {rides.map((ride, index) => {
+                    const isBlocked = isRideBlocked(ride.id);
+                    const isProcessing = processingRequests.has(ride.id);
+                    const isFullyBooked = ((ride.seats || 4) - 1) - (ride.seats_filled || 0) === 0;
+                    
+                    return (
+                      <div 
+                        key={ride.id || index} 
+                        className="bcRides-card bcRides-clickable"
+                        onClick={() => handleRideClick(ride)}
+                      >
+                        <div className="bcRides-card-content">
+                          <div className="bcRides-time-route">
+                            <div className="bcRides-time-info">
+                              <span className="bcRides-departure-time">{formatTime(ride.time)}</span>
+                              <span className="bcRides-duration">
+                                {ride.calculatedDuration || ride.duration || 'N/A'}
                               </span>
-                              <div className="bcRides-seats-visual">
-                                {[...Array((ride.seats || 4) - 1)].map((_, seatIndex) => (
-                                  <div 
-                                    key={seatIndex} 
-                                    className={`bcRides-seat-icon ${seatIndex < (ride.seats_filled || 0) ? 'filled' : 'empty'}`}
-                                  >
-                                    👤
-                                  </div>
-                                ))}
+                              <span className="bcRides-arrival-time">
+                                {calculateArrivalTime(ride.time, ride.calculatedDuration || ride.duration)}
+                              </span>
+                            </div>
+                            <div className="bcRides-route-info">
+                              <span className="bcRides-route-text">
+                                {ride.origin} - {ride.destination}
+                                {ride.distance && <span className="bcRides-distance"> • {ride.distance} km</span>}
+                              </span>
+                            </div>
+                          </div>
+
+                          <div className="bcRides-vehicle-info">
+                            <div className="bcRides-vehicle-details">
+                              <span className="bcRides-vehicle-type">{ride.vehicle_type || 'Car'}</span>
+                              <div className="bcRides-seats-display">
+                                <span className="bcRides-seats-text">
+                                  {((ride.seats || 4) - 1) - (ride.seats_filled || 0)} seats available
+                                </span>
+                                <div className="bcRides-seats-visual">
+                                  {[...Array((ride.seats || 4) - 1)].map((_, seatIndex) => (
+                                    <div 
+                                      key={seatIndex} 
+                                      className={`bcRides-seat-icon ${seatIndex < (ride.seats_filled || 0) ? 'filled' : 'empty'}`}
+                                    >
+                                      👤
+                                    </div>
+                                  ))}
+                                </div>
                               </div>
                             </div>
                           </div>
-                        </div>
 
-                        <div className="bcRides-price-book">
-                          <div className="bcRides-price-info">
-                            <span className="bcRides-price">~₹{ride.approxPrice || '0'}</span>
-                            <span className="bcRides-price-label"> approx per person</span>
+                          <div className="bcRides-price-book">
+                            <div className="bcRides-price-info">
+                              <span className="bcRides-price">~₹{ride.approxPrice || '0'}</span>
+                              <span className="bcRides-price-label"> approx per person</span>
+                            </div>
+                            <button 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleBookRide(ride.id);
+                              }}
+                              className={`bcRides-book-btn ${isBlocked || isFullyBooked ? 'blocked' : ''}`}
+                              disabled={isBlocked || isFullyBooked || isProcessing}
+                            >
+                              {getButtonText(ride.id, ride)}
+                            </button>
                           </div>
-                          <button 
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleBookRide(ride.id);
-                            }}
-                            className="bcRides-book-btn"
-                            disabled={((ride.seats || 4) - 1) - (ride.seats_filled || 0) === 0}
-                          >
-                            {((ride.seats || 4) - 1) - (ride.seats_filled || 0) === 0 ? 'Fully Booked' : 'REQUEST NOW'}
-                          </button>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>
@@ -581,7 +722,6 @@ const Available_rides = () => {
               </div>
             ) : (
               <div className="bcRides-modal-body">
-                {/* Ride Information */}
                 <div className="bcRides-modal-section">
                   <h3>Journey Information</h3>
                   <div className="bcRides-modal-journey">
@@ -631,7 +771,6 @@ const Available_rides = () => {
                   </div>
                 </div>
 
-                {/* Participants Section */}
                 <div className="bcRides-modal-section">
                   <h3>Fellow Travelers ({rideDetails?.length || 0})</h3>
                   {rideDetails && rideDetails.length > 0 ? (
@@ -658,14 +797,13 @@ const Available_rides = () => {
                   )}
                 </div>
 
-                {/* Action Buttons */}
                 <div className="bcRides-modal-actions">
                   <button 
-                    className="bcRides-modal-request-btn"
+                    className={`bcRides-modal-request-btn ${isRideBlocked(selectedRide.id) ? 'blocked' : ''}`}
                     onClick={() => handleBookRide(selectedRide.id)}
-                    disabled={((selectedRide.seats || 4) - 1) - (selectedRide.seats_filled || 0) === 0}
+                    disabled={isRideBlocked(selectedRide.id) || ((selectedRide.seats || 4) - 1) - (selectedRide.seats_filled || 0) === 0}
                   >
-                    {((selectedRide.seats || 4) - 1) - (selectedRide.seats_filled || 0) === 0 ? 'Fully Booked' : 'Request to Join'}
+                    {getButtonText(selectedRide.id, selectedRide)}
                   </button>
                   <button className="bcRides-modal-cancel-btn" onClick={closeModal}>
                     Close
