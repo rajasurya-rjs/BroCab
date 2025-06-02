@@ -11,6 +11,25 @@ const Notifications = () => {
   const [error, setError] = useState(null);
   const { currentUser, getIdToken } = useAuth();
 
+  // FORCE CLEAR BADGE WHEN COMPONENT MOUNTS
+  useEffect(() => {
+    console.log('Notifications component mounted - clearing badge');
+    
+    // Immediately dispatch events to clear badge
+    window.dispatchEvent(new CustomEvent('notificationsViewed'));
+    window.dispatchEvent(new CustomEvent('notificationCleared'));
+    
+    // Set localStorage flag
+    localStorage.setItem('notificationPageVisited', Date.now().toString());
+    localStorage.setItem('notificationBadgeCleared', 'true');
+    
+    // Cleanup when component unmounts
+    return () => {
+      console.log('Notifications component unmounting');
+      window.dispatchEvent(new CustomEvent('notificationCleared'));
+    };
+  }, []);
+
   useEffect(() => {
     if (currentUser) {
       fetchNotifications();
@@ -85,6 +104,8 @@ const Notifications = () => {
       
       if (unreadNotifications.length === 0) return;
 
+      console.log('Marking all notifications as read...');
+
       // Mark all unread notifications as read
       const promises = unreadNotifications.map(notification =>
         fetch(`https://brocab.onrender.com/notification/${notification.notification_id}/read`, {
@@ -103,8 +124,13 @@ const Notifications = () => {
         prev.map(notification => ({ ...notification, read: true }))
       );
 
-      // Dispatch event to clear navbar count
+      // Dispatch events to clear navbar count
       window.dispatchEvent(new CustomEvent('notificationsViewed'));
+      window.dispatchEvent(new CustomEvent('notificationCleared'));
+      
+      // Set localStorage flags
+      localStorage.setItem('notificationBadgeCleared', 'true');
+      localStorage.setItem('notificationPageVisited', Date.now().toString());
       
     } catch (error) {
       console.error('Error marking notifications as read:', error);

@@ -30,46 +30,77 @@ const Available_rides = () => {
     date: urlParams.get('date')?.trim() || ''
   });
 
-  // Debug state changes
-  useEffect(() => {
-    console.log('Requested rides updated:', Array.from(requestedRides));
-    console.log('Booked rides updated:', Array.from(bookedRides));
-  }, [requestedRides, bookedRides]);
-
-  // Function to get coordinates from location name using Nominatim (free geocoding)
+  // Fixed coordinate fetching with better error handling
   const getCoordinates = async (locationName) => {
     try {
+      // Clean the location name
+      const cleanLocation = locationName.trim().toLowerCase();
+      
       const response = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(locationName)}&limit=1`
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(cleanLocation)}&countrycodes=in&limit=1`
       );
+      
+      if (!response.ok) {
+        throw new Error(`Geocoding failed: ${response.status}`);
+      }
+      
       const data = await response.json();
       
       if (data && data.length > 0) {
-        return {
+        const coords = {
           lat: parseFloat(data[0].lat),
           lon: parseFloat(data[0].lon)
         };
+        
+        // Validate coordinates
+        if (isNaN(coords.lat) || isNaN(coords.lon)) {
+          throw new Error('Invalid coordinates received');
+        }
+        
+        console.log(`Coordinates for ${locationName}:`, coords);
+        return coords;
       }
+      
+      console.warn(`No coordinates found for: ${locationName}`);
       return null;
     } catch (error) {
-      console.error('Error getting coordinates:', error);
+      console.error(`Error getting coordinates for ${locationName}:`, error);
       return null;
     }
   };
 
-  // Function to calculate distance and duration using OSRM (free)
+  // Fixed route calculation with fallback
   const calculateRouteInfo = async (origin, destination) => {
     try {
-      const originCoords = await getCoordinates(origin);
-      const destCoords = await getCoordinates(destination);
+      console.log(`Calculating route from ${origin} to ${destination}`);
+      
+      const [originCoords, destCoords] = await Promise.all([
+        getCoordinates(origin),
+        getCoordinates(destination)
+      ]);
       
       if (!originCoords || !destCoords) {
+        console.warn('Could not get coordinates for route calculation');
+        return { distance: null, duration: null };
+      }
+
+      // Validate coordinate ranges
+      if (Math.abs(originCoords.lat) > 90 || Math.abs(originCoords.lon) > 180 ||
+          Math.abs(destCoords.lat) > 90 || Math.abs(destCoords.lon) > 180) {
+        console.error('Invalid coordinate ranges');
         return { distance: null, duration: null };
       }
 
       const osrmUrl = `https://router.project-osrm.org/route/v1/driving/${originCoords.lon},${originCoords.lat};${destCoords.lon},${destCoords.lat}?overview=false&alternatives=false&steps=false`;
       
+      console.log('OSRM URL:', osrmUrl);
+      
       const response = await fetch(osrmUrl);
+      
+      if (!response.ok) {
+        throw new Error(`OSRM API failed: ${response.status}`);
+      }
+      
       const data = await response.json();
       
       if (data && data.routes && data.routes[0]) {
@@ -86,16 +117,23 @@ const Available_rides = () => {
           durationString = `${minutes}m`;
         }
         
+        console.log(`Route calculated: ${distanceInKm}km, ${durationString}`);
+        
         return {
           distance: distanceInKm,
           duration: durationString
         };
       }
       
+      console.warn('No route found in OSRM response');
       return { distance: null, duration: null };
     } catch (error) {
       console.error('Error calculating route info:', error);
-      return { distance: null, duration: null };
+      // Return fallback values instead of null
+      return { 
+        distance: 'N/A', 
+        duration: '~2h' 
+      };
     }
   };
 
@@ -124,11 +162,9 @@ const Available_rides = () => {
 
       if (response.ok) {
         const data = await response.json();
-        console.log('Requested rides API response:', data);
         const requestedRideIds = new Set(
           Array.isArray(data) ? data.map(r => r.ride_id) : []
         );
-        console.log('Setting requested ride IDs:', Array.from(requestedRideIds));
         setRequestedRides(requestedRideIds);
       }
     } catch (error) {
@@ -153,11 +189,9 @@ const Available_rides = () => {
 
       if (response.ok) {
         const data = await response.json();
-        console.log('Booked rides API response:', data);
         const bookedRideIds = new Set(
           Array.isArray(data) ? data.map(r => r.ride_id || r.leader_id) : []
         );
-        console.log('Setting booked ride IDs:', Array.from(bookedRideIds));
         setBookedRides(bookedRideIds);
       }
     } catch (error) {
@@ -234,21 +268,32 @@ const Available_rides = () => {
         ridesData = data;
       }
 
+      // Calculate route info for each ride with better error handling
       const ridesWithRouteInfo = await Promise.all(
         ridesData.map(async (ride) => {
-          const routeInfo = await calculateRouteInfo(ride.origin, ride.destination);
-          const approxPrice = calculateApproxPrice(
-            ride.price || 0, 
-            ride.seats || 4, 
-            ride.seats_filled || 0
-          );
-          
-          return {
-            ...ride,
-            distance: routeInfo.distance,
-            calculatedDuration: routeInfo.duration,
-            approxPrice: approxPrice
-          };
+          try {
+            const routeInfo = await calculateRouteInfo(ride.origin, ride.destination);
+            const approxPrice = calculateApproxPrice(
+              ride.price || 0, 
+              ride.seats || 4, 
+              ride.seats_filled || 0
+            );
+            
+            return {
+              ...ride,
+              distance: routeInfo.distance,
+              calculatedDuration: routeInfo.duration,
+              approxPrice: approxPrice
+            };
+          } catch (error) {
+            console.error(`Error processing ride ${ride.id}:`, error);
+            return {
+              ...ride,
+              distance: 'N/A',
+              calculatedDuration: '~2h',
+              approxPrice: calculateApproxPrice(ride.price || 0, ride.seats || 4, ride.seats_filled || 0)
+            };
+          }
         })
       );
       
@@ -373,23 +418,11 @@ const Available_rides = () => {
 
   // Check if ride is already booked or requested
   const isRideBlocked = (rideId) => {
-    const blocked = bookedRides.has(rideId) || requestedRides.has(rideId);
-    console.log(`Ride ${rideId} blocked:`, blocked, {
-      booked: bookedRides.has(rideId),
-      requested: requestedRides.has(rideId)
-    });
-    return blocked;
+    return bookedRides.has(rideId) || requestedRides.has(rideId);
   };
 
   // Get button text based on ride status
   const getButtonText = (rideId, ride) => {
-    console.log(`Getting button text for ride ${rideId}:`, {
-      isBooked: bookedRides.has(rideId),
-      isRequested: requestedRides.has(rideId),
-      isProcessing: processingRequests.has(rideId),
-      isFullyBooked: ((ride.seats || 4) - 1) - (ride.seats_filled || 0) === 0
-    });
-
     if (bookedRides.has(rideId)) return 'ALREADY BOOKED';
     if (requestedRides.has(rideId)) return 'ALREADY REQUESTED';
     if (processingRequests.has(rideId)) return 'PROCESSING...';
@@ -397,7 +430,7 @@ const Available_rides = () => {
     return 'REQUEST NOW';
   };
 
-  // Enhanced handleBookRide function with blocking logic
+  // Fixed handleBookRide function
   const handleBookRide = async (rideId) => {
     console.log(`handleBookRide called for ride ${rideId}`);
     
@@ -442,10 +475,18 @@ const Available_rides = () => {
       console.log(`Join request response status: ${response.status}`);
 
       if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Join request error response:', errorText);
+        
         if (response.status === 401) {
           throw new Error('Authentication failed. Please login again.');
         } else if (response.status === 400) {
-          const errorData = await response.json();
+          let errorData;
+          try {
+            errorData = JSON.parse(errorText);
+          } catch {
+            errorData = { error: errorText };
+          }
           throw new Error(errorData.error || 'Bad request');
         } else if (response.status === 409) {
           // Already requested - update state anyway
@@ -453,7 +494,7 @@ const Available_rides = () => {
           setRequestedRides(prev => new Set(prev).add(rideId));
           throw new Error('You have already requested to join this ride');
         }
-        throw new Error(`HTTP error! status: ${response.status}`);
+        throw new Error(`Request failed with status ${response.status}: ${errorText}`);
       }
 
       const result = await response.json();
@@ -644,7 +685,7 @@ const Available_rides = () => {
                             <div className="bcRides-time-info">
                               <span className="bcRides-departure-time">{formatTime(ride.time)}</span>
                               <span className="bcRides-duration">
-                                {ride.calculatedDuration || ride.duration || 'N/A'}
+                                {ride.calculatedDuration || ride.duration || '~2h'}
                               </span>
                               <span className="bcRides-arrival-time">
                                 {calculateArrivalTime(ride.time, ride.calculatedDuration || ride.duration)}
@@ -653,7 +694,9 @@ const Available_rides = () => {
                             <div className="bcRides-route-info">
                               <span className="bcRides-route-text">
                                 {ride.origin} - {ride.destination}
-                                {ride.distance && <span className="bcRides-distance"> • {ride.distance} km</span>}
+                                {ride.distance && ride.distance !== 'N/A' && (
+                                  <span className="bcRides-distance"> • {ride.distance} km</span>
+                                )}
                               </span>
                             </div>
                           </div>
@@ -753,11 +796,11 @@ const Available_rides = () => {
                       </div>
                       <div className="bcRides-modal-detail-item">
                         <span className="bcRides-modal-detail-label">Duration</span>
-                        <span className="bcRides-modal-detail-value">{selectedRide.calculatedDuration || selectedRide.duration || 'N/A'}</span>
+                        <span className="bcRides-modal-detail-value">{selectedRide.calculatedDuration || selectedRide.duration || '~2h'}</span>
                       </div>
                       <div className="bcRides-modal-detail-item">
                         <span className="bcRides-modal-detail-label">Distance</span>
-                        <span className="bcRides-modal-detail-value">{selectedRide.distance ? `${selectedRide.distance} km` : 'N/A'}</span>
+                        <span className="bcRides-modal-detail-value">{selectedRide.distance && selectedRide.distance !== 'N/A' ? `${selectedRide.distance} km` : 'N/A'}</span>
                       </div>
                       <div className="bcRides-modal-detail-item">
                         <span className="bcRides-modal-detail-label">Vehicle</span>

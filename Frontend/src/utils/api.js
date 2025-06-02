@@ -138,11 +138,19 @@ export const userAPI = {
       const response = await apiCall('/user/notifications');
       console.log('userAPI.getNotifications: Got response:', response);
       console.log('userAPI.getNotifications: Response status:', response.status);
-      console.log('userAPI.getNotifications: Response headers:', response.headers);
       
       const data = await response.json();
       console.log('userAPI.getNotifications: Parsed JSON data:', data);
-      return data;
+      
+      // Ensure we return an array
+      if (Array.isArray(data)) {
+        return data;
+      } else if (data && Array.isArray(data.notifications)) {
+        return data.notifications;
+      } else {
+        console.warn('Unexpected notification data format:', data);
+        return [];
+      }
     } catch (error) {
       console.error('userAPI.getNotifications: Error occurred:', error);
       throw error;
@@ -151,8 +159,59 @@ export const userAPI = {
 
   // Get unread notification count
   getUnreadCount: async () => {
-    const response = await apiCall('/user/notifications/unread-count');
-    return response.json();
+    try {
+      console.log('userAPI.getUnreadCount: Starting request...');
+      const response = await apiCall('/user/notifications/unread-count');
+      const data = await response.json();
+      console.log('userAPI.getUnreadCount: Response data:', data);
+      
+      // Handle different response formats
+      if (typeof data === 'number') {
+        return { unread_count: data };
+      } else if (data && typeof data.unread_count === 'number') {
+        return data;
+      } else if (data && typeof data.count === 'number') {
+        return { unread_count: data.count };
+      } else {
+        console.warn('Unexpected unread count format:', data);
+        return { unread_count: 0 };
+      }
+    } catch (error) {
+      console.error('userAPI.getUnreadCount: Error occurred:', error);
+      throw error;
+    }
+  },
+
+  // Mark all notifications as read
+  markAllNotificationsAsRead: async () => {
+    try {
+      console.log('userAPI.markAllNotificationsAsRead: Starting request...');
+      const response = await apiCall('/user/notifications/mark-all-read', {
+        method: 'PUT',
+      });
+      const data = await response.json();
+      console.log('userAPI.markAllNotificationsAsRead: Response data:', data);
+      return data;
+    } catch (error) {
+      console.error('userAPI.markAllNotificationsAsRead: Error occurred:', error);
+      throw error;
+    }
+  },
+
+  // Mark single notification as read
+  markNotificationAsRead: async (notificationId) => {
+    try {
+      console.log('userAPI.markNotificationAsRead: Starting request for ID:', notificationId);
+      const response = await apiCall(`/user/notifications/${notificationId}/read`, {
+        method: 'PUT',
+      });
+      const data = await response.json();
+      console.log('userAPI.markNotificationAsRead: Response data:', data);
+      return data;
+    } catch (error) {
+      console.error('userAPI.markNotificationAsRead: Error occurred:', error);
+      throw error;
+    }
   },
 
   // Cancel ride participation (unified - handles both pending requests and participation)
@@ -256,12 +315,96 @@ export const rideAPI = {
   },
 };
 
+// Updated notification API with proper endpoints
 export const notificationAPI = {
-  // Mark notification as read
+  // Mark notification as read (legacy support)
   markAsRead: async (notificationID) => {
-    const response = await apiCall(`/notification/${notificationID}/read`, {
-      method: 'POST',
-    });
-    return response.json();
+    try {
+      console.log('notificationAPI.markAsRead: Starting request for ID:', notificationID);
+      const response = await apiCall(`/notification/${notificationID}/read`, {
+        method: 'POST',
+      });
+      const data = await response.json();
+      console.log('notificationAPI.markAsRead: Response data:', data);
+      return data;
+    } catch (error) {
+      console.error('notificationAPI.markAsRead: Error occurred:', error);
+      throw error;
+    }
   },
+
+  // Get all notifications (alternative endpoint)
+  getAll: async () => {
+    try {
+      console.log('notificationAPI.getAll: Starting request...');
+      const response = await apiCall('/notifications');
+      const data = await response.json();
+      console.log('notificationAPI.getAll: Response data:', data);
+      return Array.isArray(data) ? data : [];
+    } catch (error) {
+      console.error('notificationAPI.getAll: Error occurred:', error);
+      throw error;
+    }
+  },
+
+  // Get unread count (alternative endpoint)
+  getUnreadCount: async () => {
+    try {
+      console.log('notificationAPI.getUnreadCount: Starting request...');
+      const response = await apiCall('/notifications/unread-count');
+      const data = await response.json();
+      console.log('notificationAPI.getUnreadCount: Response data:', data);
+      return data;
+    } catch (error) {
+      console.error('notificationAPI.getUnreadCount: Error occurred:', error);
+      throw error;
+    }
+  },
+
+  // Mark all as read (alternative endpoint)
+  markAllAsRead: async () => {
+    try {
+      console.log('notificationAPI.markAllAsRead: Starting request...');
+      const response = await apiCall('/notifications/mark-all-read', {
+        method: 'PUT',
+      });
+      const data = await response.json();
+      console.log('notificationAPI.markAllAsRead: Response data:', data);
+      return data;
+    } catch (error) {
+      console.error('notificationAPI.markAllAsRead: Error occurred:', error);
+      throw error;
+    }
+  },
+};
+
+// Utility function to handle API errors consistently
+export const handleAPIError = (error, context = '') => {
+  console.error(`API Error ${context}:`, error);
+  
+  if (error.message.includes('401')) {
+    // Unauthorized - redirect to login
+    window.location.href = '/login';
+    return 'Authentication required. Please log in again.';
+  } else if (error.message.includes('403')) {
+    return 'Access denied. You do not have permission for this action.';
+  } else if (error.message.includes('404')) {
+    return 'Resource not found.';
+  } else if (error.message.includes('500')) {
+    return 'Server error. Please try again later.';
+  } else if (error.message.includes('Network')) {
+    return 'Network error. Please check your connection.';
+  } else {
+    return error.message || 'An unexpected error occurred.';
+  }
+};
+
+// Export default object for easier importing
+export default {
+  userAPI,
+  rideAPI,
+  notificationAPI,
+  pingServer,
+  apiCall,
+  handleAPIError,
 };
