@@ -378,7 +378,422 @@ body {
 .bcDash-time-input::placeholder {
   color: #9ca3af !important;
   font-weight: 400 !important;
+}/* PREMIUM Enhanced Suggestions Dropdown */
+.bcDash-suggestions-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 20px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  z-index: 1000;
+  max-height: 400px;
+  overflow-y: auto;
+  margin-top: 8px;
+  backdrop-filter: blur(20px);
+  border-top: 3px solid #6366f1;
 }
+/* PREMIUM Suggestion Items */
+.bcDash-suggestion-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 20px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border-bottom: 1px solid #f1f5f9;
+  position: relative;
+  overflow: hidden;
+}
+
+.bcDash-suggestion-item:last-child {
+  border-bottom: none;
+}
+
+.bcDash-suggestion-item:hover {
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  transform: translateX(8px);
+  box-shadow: 0 8px 25px rgba(99, 102, 241, 0.15);
+}
+
+.bcDash-suggestion-item::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 0;
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  transition: width 0.3s;
+}
+
+.bcDash-suggestion-item:hover::before {
+  width: 4px;
+}
+
+/* Premium Verified Suggestions */
+.bcDash-suggestion-item.verified {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.02) 0%, rgba(5, 150, 105, 0.02) 100%);
+  border-left: 3px solid #10b981;
+}
+
+.bcDash-suggestion-item.verified:hover {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(5, 150, 105, 0.08) 100%);
+  box-shadow: 0 8px 25px rgba(16, 185, 129, 0.2);
+}
+
+.bcDash-suggestion-item.current-location {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.05) 0%, rgba(139, 92, 246, 0.05) 100%);
+  border-left: 3px solid #6366f1;
+}
+
+.bcDash-suggestion-item.current-location:hover {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%);
+  box-shadow: 0 8px 25px rgba(99, 102, 241, 0.25);
+}
+
+/* Premium Icon Wrapper */
+.bcDash-suggestion-icon-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: rgba(99, 102, 241, 0.1);
+  flex-shrink: 0;
+  transition: all 0.3s;
+}
+
+.bcDash-suggestion-item:hover .bcDash-suggestion-icon-wrapper {
+  background: rgba(99, 102, 241, 0.2);
+  transform: scale(1.1);
+}
+
+.bcDash-suggestion-item.verified .bcDash-suggestion-icon-wrapper {
+  background: rgba(16, 185, 129, 0.1);
+}
+
+.bcDash-suggestion-item.verified:hover .bcDash-suggestion-icon-wrapper {
+  background: rgba(16, 185, 129, 0.2);
+}
+
+.bcDash-suggestion-item.current-location .bcDash-suggestion-icon-wrapper {
+  background: rgba(99, 102, 241, 0.15);
+}
+
+.bcDash-suggestion-item.current-location:hover .bcDash-suggestion-icon-wrapper {
+  background: rgba(99, 102, 241, 0.25);
+}
+
+/* Premium Icons */
+.bcDash-suggestion-icon {
+  font-size: 20px;
+  transition: all 0.3s;
+}
+
+.bcDash-suggestion-icon.verified {
+  color: #10b981;
+  font-size: 18px;
+}
+
+.bcDash-suggestion-icon.current {
+  color: #6366f1;
+  animation: pulse 2s infinite;
+}
+
+/* Premium Content */
+.bcDash-suggestion-content {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.bcDash-suggestion-name {
+  font-size: 16px;
+  font-weight: 700;
+  color: #1e293b;
+  line-height: 1.3;
+  margin-bottom: 4px;
+  letter-spacing: -0.2px;
+}
+
+.bcDash-suggestion-item.verified .bcDash-suggestion-name {
+  color: #059669;
+}
+
+.bcDash-suggestion-item.current-location .bcDash-suggestion-name {
+  color: #4f46e5;
+}
+
+.bcDash-suggestion-text {
+  font-size: 14px;
+  color: #64748b;
+  font-weight: 500;
+  line-height: 1.4;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+/* Premium Meta Information */
+.bcDash-suggestion-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+}
+
+.bcDash-suggestion-category {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 3px 8px;
+  border-radius: 10px;
+  border: 1px solid;
+}
+
+.bcDash-suggestion-category.premium {
+  background: rgba(99, 102, 241, 0.1);
+  color: #4f46e5;
+  border-color: rgba(99, 102, 241, 0.2);
+}
+
+.bcDash-suggestion-category.overpass {
+  background: rgba(16, 185, 129, 0.1);
+  color: #059669;
+  border-color: rgba(16, 185, 129, 0.2);
+}
+
+.bcDash-suggestion-category.nominatim {
+  background: rgba(245, 158, 11, 0.1);
+  color: #d97706;
+  border-color: rgba(245, 158, 11, 0.2);
+}
+
+.bcDash-suggestion-category.gps {
+  background: rgba(99, 102, 241, 0.15);
+  color: #4f46e5;
+  border-color: rgba(99, 102, 241, 0.3);
+}
+
+.bcDash-suggestion-verified {
+  font-size: 10px;
+  font-weight: 700;
+  color: #10b981;
+  background: rgba(16, 185, 129, 0.1);
+  padding: 2px 6px;
+  border-radius: 8px;
+  border: 1px solid rgba(16, 185, 129, 0.2);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.bcDash-suggestion-distance {
+  font-size: 11px;
+  color: #10b981;
+  font-weight: 700;
+  background: rgba(16, 185, 129, 0.1);
+  padding: 3px 8px;
+  border-radius: 10px;
+  border: 1px solid rgba(16, 185, 129, 0.2);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.bcDash-suggestion-distance::before {
+  content: '📍';
+  font-size: 10px;
+}
+
+/* Enhanced Loading State */
+.bcDash-suggestions-loading {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 16px;
+  margin-top: 8px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  z-index: 1000;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+}
+
+.bcDash-loading-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid #e2e8f0;
+  border-top: 2px solid #6366f1;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+.bcDash-suggestions-loading span {
+  font-size: 14px;
+  color: #64748b;
+  font-weight: 500;
+}
+
+/* Custom Scrollbar for Suggestions */
+.bcDash-suggestions-dropdown::-webkit-scrollbar {
+  width: 6px;
+}
+
+.bcDash-suggestions-dropdown::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 3px;
+}
+
+.bcDash-suggestions-dropdown::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+
+.bcDash-suggestions-dropdown::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Enhanced Mobile Responsive */
+@media (max-width: 768px) {
+  .bcDash-suggestions-dropdown {
+    max-height: 300px;
+    border-radius: 12px;
+  }
+  
+  .bcDash-suggestion-item {
+    padding: 16px;
+    gap: 12px;
+  }
+  
+  .bcDash-suggestion-icon-wrapper {
+    width: 36px;
+    height: 36px;
+  }
+  
+  .bcDash-suggestion-name {
+    font-size: 15px;
+  }
+  
+  .bcDash-suggestion-text {
+    font-size: 13px;
+  }
+  
+  .bcDash-suggestion-category,
+  .bcDash-suggestion-distance,
+  .bcDash-suggestion-verified {
+    font-size: 10px;
+  }
+}
+
+@media (max-width: 480px) {
+  .bcDash-suggestions-dropdown {
+    max-height: 250px;
+  }
+  
+  .bcDash-suggestion-item {
+    padding: 12px;
+    gap: 10px;
+  }
+  
+  .bcDash-suggestion-icon-wrapper {
+    width: 32px;
+    height: 32px;
+  }
+  
+  .bcDash-suggestion-name {
+    font-size: 14px;
+  }
+  
+  .bcDash-suggestion-text {
+    font-size: 12px;
+    -webkit-line-clamp: 1;
+  }
+  
+  .bcDash-suggestion-meta {
+    gap: 6px;
+  }
+  
+  .bcDash-suggestion-category,
+  .bcDash-suggestion-distance,
+  .bcDash-suggestion-verified {
+    font-size: 9px;
+    padding: 2px 6px;
+  }
+}
+
+@media (max-width: 360px) {
+  .bcDash-suggestions-dropdown {
+    max-height: 200px;
+  }
+  
+  .bcDash-suggestion-item {
+    padding: 10px;
+    gap: 8px;
+  }
+  
+  .bcDash-suggestion-icon-wrapper {
+    width: 28px;
+    height: 28px;
+  }
+  
+  .bcDash-suggestion-name {
+    font-size: 13px;
+  }
+  
+  .bcDash-suggestion-text {
+    font-size: 11px;
+  }
+}
+
+/* Accessibility Enhancements */
+.bcDash-suggestion-item:focus {
+  outline: 2px solid #6366f1;
+  outline-offset: 2px;
+}
+
+.bcDash-suggestion-item.verified:focus {
+  outline-color: #10b981;
+}
+
+/* High Contrast Mode */
+@media (prefers-contrast: high) {
+  .bcDash-suggestion-item {
+    border: 2px solid #000;
+  }
+  
+  .bcDash-suggestion-name {
+    color: #000;
+  }
+  
+  .bcDash-suggestion-text {
+    color: #333;
+  }
+}
+
+/* Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+  .bcDash-suggestion-item,
+  .bcDash-suggestion-icon-wrapper,
+  .bcDash-suggestion-icon {
+    transition: none !important;
+    animation: none !important;
+  }
+}
+
 
 /* Premium Buttons */
 .bcDash-premium-btn {
@@ -1012,7 +1427,82 @@ body {
   .bcDash-stats-container {
     grid-template-columns: 1fr;
     gap: 16px;
+  }/* Location Suggestions Dropdown */
+.bcDash-suggestions-dropdown,
+.bcPostRide-suggestions-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+  max-height: 200px;
+  overflow-y: auto;
+  margin-top: 4px;
+}
+
+.bcDash-suggestion-item,
+.bcPostRide-suggestion-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  cursor: pointer;
+  transition: all 0.2s;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.bcDash-suggestion-item:last-child,
+.bcPostRide-suggestion-item:last-child {
+  border-bottom: none;
+}
+
+.bcDash-suggestion-item:hover,
+.bcPostRide-suggestion-item:hover {
+  background: #f8fafc;
+  transform: translateX(4px);
+}
+
+.bcDash-suggestion-icon,
+.bcPostRide-suggestion-icon {
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.bcDash-suggestion-text,
+.bcPostRide-suggestion-text {
+  font-size: 14px;
+  color: #374151;
+  font-weight: 500;
+  line-height: 1.4;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+  .bcDash-suggestions-dropdown,
+  .bcPostRide-suggestions-dropdown {
+    max-height: 150px;
   }
+  
+  .bcDash-suggestion-item,
+  .bcPostRide-suggestion-item {
+    padding: 10px 12px;
+  }
+  
+  .bcDash-suggestion-text,
+  .bcPostRide-suggestion-text {
+    font-size: 13px;
+  }
+}
+
 
   .bcDash-stat-item {
     min-height: 120px;
@@ -1119,6 +1609,423 @@ body {
   }
   
   .bcDash-time-input {
+    -webkit-appearance: none;
+  }
+}
+/* Location Status Indicator */
+.bcDash-location-status {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 16px;
+  animation: fadeInUp 1s 0.5s both;
+}
+
+.bcDash-location-indicator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(16, 185, 129, 0.1);
+  color: #10b981;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: 600;
+  border: 1px solid rgba(16, 185, 129, 0.2);
+  backdrop-filter: blur(10px);
+}
+
+.bcDash-location-indicator svg {
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+/* Current Location Button */
+.bcDash-current-location-btn {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  border: none;
+  border-radius: 8px;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 3;
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
+}
+
+.bcDash-current-location-btn:hover {
+  transform: translateY(-50%) scale(1.1);
+  box-shadow: 0 4px 16px rgba(99, 102, 241, 0.4);
+}
+
+.bcDash-current-location-btn:active {
+  transform: translateY(-50%) scale(0.95);
+}
+
+.bcDash-current-location-btn.loading {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.bcDash-current-location-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+/* Location Loading Spinner */
+.bcDash-location-spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top: 2px solid white;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+/* Enhanced Premium Location Suggestions Dropdown */
+.bcDash-suggestions-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  z-index: 1000;
+  max-height: 320px;
+  overflow-y: auto;
+  margin-top: 8px;
+  backdrop-filter: blur(10px);
+  border-top: 3px solid #6366f1;
+}
+
+.bcDash-suggestion-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border-bottom: 1px solid #f1f5f9;
+  position: relative;
+  overflow: hidden;
+}
+
+.bcDash-suggestion-item:last-child {
+  border-bottom: none;
+}
+
+.bcDash-suggestion-item:hover {
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  transform: translateX(8px);
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.1);
+}
+
+.bcDash-suggestion-item::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 0;
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  transition: width 0.3s;
+}
+
+.bcDash-suggestion-item:hover::before {
+  width: 4px;
+}
+
+.bcDash-suggestion-icon {
+  font-size: 18px;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.bcDash-suggestion-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.bcDash-suggestion-text {
+  font-size: 15px;
+  color: #1e293b;
+  font-weight: 600;
+  line-height: 1.4;
+  margin-bottom: 6px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.bcDash-suggestion-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.bcDash-suggestion-type {
+  font-size: 12px;
+  color: #64748b;
+  font-weight: 500;
+  text-transform: capitalize;
+  background: rgba(99, 102, 241, 0.1);
+  padding: 2px 8px;
+  border-radius: 12px;
+}
+
+.bcDash-suggestion-distance {
+  font-size: 11px;
+  color: #10b981;
+  font-weight: 700;
+  background: rgba(16, 185, 129, 0.1);
+  padding: 3px 8px;
+  border-radius: 10px;
+  border: 1px solid rgba(16, 185, 129, 0.2);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.bcDash-suggestion-distance::before {
+  content: '📍';
+  font-size: 10px;
+}
+
+/* Enhanced Loading State */
+.bcDash-suggestions-loading {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 16px;
+  margin-top: 8px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  z-index: 1000;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+}
+
+.bcDash-loading-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid #e2e8f0;
+  border-top: 2px solid #6366f1;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.bcDash-suggestions-loading span {
+  font-size: 14px;
+  color: #64748b;
+  font-weight: 500;
+}
+
+/* Custom Scrollbar for Suggestions */
+.bcDash-suggestions-dropdown::-webkit-scrollbar {
+  width: 6px;
+}
+
+.bcDash-suggestions-dropdown::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 3px;
+}
+
+.bcDash-suggestions-dropdown::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+
+.bcDash-suggestions-dropdown::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Enhanced Mobile Responsive */
+@media (max-width: 768px) {
+  .bcDash-location-status {
+    margin-bottom: 12px;
+  }
+
+  .bcDash-location-indicator {
+    font-size: 12px;
+    padding: 6px 12px;
+  }
+
+  .bcDash-current-location-btn {
+    width: 28px;
+    height: 28px;
+    right: 10px;
+  }
+
+  .bcDash-location-spinner {
+    width: 12px;
+    height: 12px;
+  }
+
+  .bcDash-suggestions-dropdown {
+    max-height: 200px;
+    border-radius: 12px;
+  }
+  
+  .bcDash-suggestion-item {
+    padding: 12px;
+  }
+  
+  .bcDash-suggestion-text {
+    font-size: 14px;
+  }
+  
+  .bcDash-suggestion-type,
+  .bcDash-suggestion-distance {
+    font-size: 11px;
+  }
+  
+  .bcDash-suggestion-icon {
+    font-size: 16px;
+  }
+}
+@media (max-width: 480px) {
+  .bcDash-location-indicator {
+    font-size: 11px;
+    padding: 4px 8px;
+  }
+
+  .bcDash-current-location-btn {
+    width: 26px;
+    height: 26px;
+    right: 8px;
+  }
+
+  .bcDash-suggestions-dropdown {
+    max-height: 150px;
+  }
+  
+  .bcDash-suggestion-item {
+    padding: 10px;
+    gap: 8px;
+  }
+  
+  .bcDash-suggestion-text {
+    font-size: 13px;
+    -webkit-line-clamp: 1;
+  }
+
+  .bcDash-suggestion-meta {
+    gap: 6px;
+  }
+
+  .bcDash-suggestion-type,
+  .bcDash-suggestion-distance {
+    font-size: 10px;
+    padding: 2px 6px;
+  }
+
+  .bcDash-suggestion-icon {
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 360px) {
+  .bcDash-location-indicator {
+    font-size: 10px;
+    padding: 3px 6px;
+    gap: 6px;
+  }
+
+  .bcDash-current-location-btn {
+    width: 24px;
+    height: 24px;
+    right: 6px;
+  }
+
+  .bcDash-location-spinner {
+    width: 10px;
+    height: 10px;
+  }
+
+  .bcDash-suggestions-dropdown {
+    max-height: 120px;
+  }
+
+  .bcDash-suggestion-item {
+    padding: 8px;
+    gap: 6px;
+  }
+
+  .bcDash-suggestion-text {
+    font-size: 12px;
+  }
+
+  .bcDash-suggestion-type,
+  .bcDash-suggestion-distance {
+    font-size: 9px;
+    padding: 1px 4px;
+  }
+}
+
+/* Focus states for accessibility */
+.bcDash-premium-input:focus,
+.bcDash-premium-btn:focus,
+.bcDash-current-location-btn:focus {
+  outline: 2px solid #6366f1;
+  outline-offset: 2px;
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .bcDash-location-indicator svg,
+  .bcDash-loading-spinner,
+  .bcDash-location-spinner {
+    animation: none !important;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .bcDash-location-indicator {
+    background: #000;
+    color: #fff;
+    border-color: #000;
+  }
+  
+  .bcDash-current-location-btn {
+    background: #000;
+    border: 2px solid #fff;
+  }
+}
+
+/* iOS Safari specific fixes */
+@supports (-webkit-touch-callout: none) {
+  .bcDash-premium-input {
+    -webkit-appearance: none;
+    border-radius: 16px;
+  }
+  
+  .bcDash-current-location-btn {
     -webkit-appearance: none;
   }
 }

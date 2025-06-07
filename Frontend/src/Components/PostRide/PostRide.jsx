@@ -1,10 +1,19 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../firebase/AuthContext';
 import Navbar from '../Navbar/Navbar';
 import './PostRide.css';
 
 const BACKGROUND_IMAGE = '/backgroundimg.png';
+
+// Debounce function for API calls
+const debounce = (func, delay) => {
+  let timeoutId;
+  return (...args) => {
+    clearTimeout(timeoutId);
+    timeoutId = setTimeout(() => func.apply(null, args), delay);
+  };
+};
 
 const PostRide = () => {
   const navigate = useNavigate();
@@ -28,6 +37,20 @@ const PostRide = () => {
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
   const [userName, setUserName] = useState('');
+
+  // Location suggestions state
+  const [suggestions, setSuggestions] = useState({
+    pickup: [],
+    destination: []
+  });
+  const [showSuggestions, setShowSuggestions] = useState({
+    pickup: false,
+    destination: false
+  });
+  const [loadingSuggestions, setLoadingSuggestions] = useState({
+    pickup: false,
+    destination: false
+  });
 
   useEffect(() => {
     const fetchUserName = async () => {
@@ -55,6 +78,111 @@ const PostRide = () => {
     fetchUserName();
   }, [currentUser, fetchUserDetails, navigate]);
 
+  // BEST FREE API - Photon (Ultra Precise)
+  const getPhotonLocations = async (query) => {
+    if (query.length < 2) return [];
+    
+    try {
+      // Photon API with Indian coordinates for better results
+      const response = await fetch(
+        `https://photon.komoot.io/api/?q=${encodeURIComponent(query)}&limit=8&lang=en&lon=77.2090&lat=28.6139&zoom=12`
+      );
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      
+      return data.features.map(feature => {
+        const props = feature.properties;
+        let displayName = '';
+        
+        // Build comprehensive display name
+        if (props.name) displayName += props.name;
+        if (props.street && props.street !== props.name) {
+          displayName += displayName ? `, ${props.street}` : props.street;
+        }
+        if (props.city && props.city !== props.name) {
+          displayName += displayName ? `, ${props.city}` : props.city;
+        }
+        if (props.state) {
+          displayName += displayName ? `, ${props.state}` : props.state;
+        }
+        if (props.country) {
+          displayName += displayName ? `, ${props.country}` : props.country;
+        }
+        
+        return {
+          display_name: displayName || 'Unknown Location',
+          lat: feature.geometry.coordinates[1],
+          lon: feature.geometry.coordinates[0],
+          type: props.type || 'place',
+          osm_id: props.osm_id,
+          source: 'photon'
+        };
+      }).filter(location => location.display_name !== 'Unknown Location');
+      
+    } catch (error) {
+      console.error('Error fetching Photon locations:', error);
+      
+      // Fallback to Nominatim if Photon fails
+      try {
+        const fallbackResponse = await fetch(
+          `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&countrycodes=in&limit=5&addressdetails=1`
+        );
+        const fallbackData = await fallbackResponse.json();
+        
+        return fallbackData.map(item => ({
+          display_name: item.display_name,
+          lat: parseFloat(item.lat),
+          lon: parseFloat(item.lon),
+          type: item.type || 'place',
+          place_id: item.place_id,
+          source: 'nominatim'
+        }));
+      } catch (fallbackError) {
+        console.error('Fallback API also failed:', fallbackError);
+        return [];
+      }
+    }
+  };
+
+  // Debounced search function
+  const debouncedLocationSearch = useCallback(
+    debounce(async (query, fieldName) => {
+      if (query.length > 1) {
+        // Set loading state
+        setLoadingSuggestions(prev => ({
+          ...prev,
+          [fieldName]: true
+        }));
+        
+        const locationSuggestions = await getPhotonLocations(query);
+        setSuggestions(prev => ({
+          ...prev,
+          [fieldName]: locationSuggestions
+        }));
+        setShowSuggestions(prev => ({
+          ...prev,
+          [fieldName]: true
+        }));
+        
+        // Remove loading state
+        setLoadingSuggestions(prev => ({
+          ...prev,
+          [fieldName]: false
+        }));
+      } else {
+        setShowSuggestions(prev => ({
+          ...prev,
+          [fieldName]: false
+        }));
+      }
+    }, 250),
+    []
+  );
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({
@@ -62,9 +190,36 @@ const PostRide = () => {
       [name]: value
     }));
     
+    // Trigger location search for pickup and destination
+    if (name === 'pickup' || name === 'destination') {
+      debouncedLocationSearch(value, name);
+    }
+    
     if (error) setError('');
     if (success) setSuccess(false);
   };
+
+  // Handle suggestion selection
+  const handleSuggestionSelect = (suggestion, fieldName) => {
+    setFormData(prev => ({
+      ...prev,
+      [fieldName]: suggestion.display_name
+    }));
+    setShowSuggestions(prev => ({
+      ...prev,
+      [fieldName]: false
+    }));
+  };
+
+  // Hide suggestions when clicking outside
+  useEffect(() => {
+    const handleClickOutside = () => {
+      setShowSuggestions({ pickup: false, destination: false });
+    };
+
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, []);
 
   const validateForm = () => {
     if (!formData.pickup.trim()) {
@@ -193,7 +348,6 @@ const PostRide = () => {
       <Navbar />
       
       <div className="bcPostRide-main-content">
-        {/* Header Section */}
         <div className="bcPostRide-header">
           <h1 className="bcPostRide-title">Post Your Ride</h1>
           <p className="bcPostRide-subtitle">
@@ -202,7 +356,6 @@ const PostRide = () => {
         </div>
 
         <div className="bcPostRide-content-wrapper">
-          {/* Main Form */}
           <div className="bcPostRide-form-section">
             <div className="bcPostRide-form-container">
               <div className="bcPostRide-form-header">
@@ -241,12 +394,13 @@ const PostRide = () => {
                   </div>
                 </div>
 
-                {/* Route Section */}
+                {/* Route Section with Autocomplete */}
                 <div className="bcPostRide-section">
                   <h3 className="bcPostRide-section-title">📍 Route Information</h3>
                   
                   <div className="bcPostRide-form-row">
-                    <div className="bcPostRide-input-group">
+                    {/* Pickup Location with Autocomplete */}
+                    <div className="bcPostRide-input-group" onClick={(e) => e.stopPropagation()}>
                       <label className="bcPostRide-label">Pickup Location *</label>
                       <div className="bcPostRide-input-wrapper">
                         <div className="bcPostRide-location-dot bcPostRide-pickup-dot"></div>
@@ -257,13 +411,46 @@ const PostRide = () => {
                           onChange={handleInputChange}
                           placeholder="Enter pickup location"
                           className="bcPostRide-input"
+                          autoComplete="off"
                           required
                           disabled={loading}
                         />
+                        
+                        {/* Loading indicator */}
+                        {loadingSuggestions.pickup && (
+                          <div className="bcPostRide-suggestions-loading">
+                            <div className="bcPostRide-loading-spinner"></div>
+                            <span>Searching...</span>
+                          </div>
+                        )}
+                        
+                        {/* Pickup Suggestions */}
+                        {showSuggestions.pickup && suggestions.pickup.length > 0 && !loadingSuggestions.pickup && (
+                          <div className="bcPostRide-suggestions-dropdown">
+                            {suggestions.pickup.map((suggestion, index) => (
+                              <div 
+                                key={suggestion.osm_id || suggestion.place_id || index}
+                                className="bcPostRide-suggestion-item"
+                                onClick={() => handleSuggestionSelect(suggestion, 'pickup')}
+                              >
+                                <div className="bcPostRide-suggestion-icon">📍</div>
+                                <div className="bcPostRide-suggestion-content">
+                                  <div className="bcPostRide-suggestion-text">
+                                    {suggestion.display_name}
+                                  </div>
+                                  <div className="bcPostRide-suggestion-type">
+                                    {suggestion.type} • {suggestion.source}
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     </div>
 
-                    <div className="bcPostRide-input-group">
+                    {/* Destination with Autocomplete */}
+                    <div className="bcPostRide-input-group" onClick={(e) => e.stopPropagation()}>
                       <label className="bcPostRide-label">Destination *</label>
                       <div className="bcPostRide-input-wrapper">
                         <div className="bcPostRide-location-dot bcPostRide-destination-dot"></div>
@@ -274,9 +461,41 @@ const PostRide = () => {
                           onChange={handleInputChange}
                           placeholder="Enter destination"
                           className="bcPostRide-input"
+                          autoComplete="off"
                           required
                           disabled={loading}
                         />
+                        
+                        {/* Loading indicator */}
+                        {loadingSuggestions.destination && (
+                          <div className="bcPostRide-suggestions-loading">
+                            <div className="bcPostRide-loading-spinner"></div>
+                            <span>Searching...</span>
+                          </div>
+                        )}
+                        
+                        {/* Destination Suggestions */}
+                        {showSuggestions.destination && suggestions.destination.length > 0 && !loadingSuggestions.destination && (
+                          <div className="bcPostRide-suggestions-dropdown">
+                            {suggestions.destination.map((suggestion, index) => (
+                              <div 
+                                key={suggestion.osm_id || suggestion.place_id || index}
+                                className="bcPostRide-suggestion-item"
+                                onClick={() => handleSuggestionSelect(suggestion, 'destination')}
+                              >
+                                <div className="bcPostRide-suggestion-icon">🎯</div>
+                                <div className="bcPostRide-suggestion-content">
+                                  <div className="bcPostRide-suggestion-text">
+                                    {suggestion.display_name}
+                                  </div>
+                                  <div className="bcPostRide-suggestion-type">
+                                    {suggestion.type} • {suggestion.source}
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
