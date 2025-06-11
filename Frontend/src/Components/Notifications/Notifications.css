@@ -1,4 +1,4 @@
-/* Remove all filter-related styles and simplify */
+/* Main container */
 .bcNotifications-container {
   min-height: 100vh;
   width: 100%;
@@ -16,7 +16,7 @@
 .bcNotifications-main-content {
   flex: 1;
   padding: 20px;
-  max-width: 800px;
+  max-width: 900px;
   margin: 0 auto;
   width: 100%;
 }
@@ -24,10 +24,10 @@
 .bcNotifications-header {
   background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(8px);
-  border-radius: 16px;
-  padding: 24px;
-  margin-bottom: 20px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  border-radius: 20px;
+  padding: 28px 24px 18px 24px;
+  margin-bottom: 24px;
+  box-shadow: 0 4px 16px rgba(99, 102, 241, 0.07);
   text-align: center;
 }
 
@@ -44,6 +44,151 @@
   margin: 0;
 }
 
+.bcNotifications-content-wrapper {
+  width: 100%;
+}
+
+.bcNotifications-list {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+/* Notification Card */
+.bcNotifications-card {
+  background: rgba(255,255,255,0.98);
+  backdrop-filter: blur(12px);
+  border-radius: 24px;
+  padding: 22px 24px 18px 24px;
+  box-shadow: 0 4px 24px rgba(99,102,241,0.08);
+  border: 1.5px solid rgba(99,102,241,0.08);
+  transition: all 0.22s cubic-bezier(.4,0,.2,1);
+  cursor: pointer;
+  outline: none;
+  display: flex;
+  flex-direction: column;
+}
+
+.bcNotifications-card:focus,
+.bcNotifications-card:hover {
+  box-shadow: 0 8px 32px rgba(99,102,241,0.13);
+  border-color: #8b5cf6;
+  transform: translateY(-2px) scale(1.01);
+}
+
+.bcNotifications-card.read {
+  opacity: 0.7;
+  background: rgba(245,245,255,0.93);
+}
+
+.bcNotifications-card-content {
+  display: grid;
+  grid-template-columns: 60px 2fr 1fr;
+  align-items: center;
+  gap: 18px;
+}
+
+.bcNotifications-icon {
+  font-size: 36px;
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(139,92,246,0.09);
+}
+
+.bcNotifications-content {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.bcNotifications-notification-title {
+  font-size: 17px;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.bcNotifications-message {
+  font-size: 15px;
+  color: #64748b;
+  line-height: 1.5;
+  margin: 0;
+  font-weight: 500;
+}
+
+.bcNotifications-ride-info {
+  font-size: 13px;
+  color: #8b5cf6;
+  font-weight: 500;
+  margin-top: 4px;
+}
+
+.bcNotifications-time {
+  font-size: 13px;
+  color: #64748b;
+  font-weight: 600;
+  text-align: right;
+}
+
+.bcNotifications-new-badge {
+  font-size: 12px;
+  color: #10b981;
+  background: #e0f7ef;
+  border-radius: 8px;
+  padding: 2px 10px;
+  font-weight: 700;
+  margin-top: 8px;
+  display: inline-block;
+}
+
+/* Empty State */
+.bcNotifications-no-notifications {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255,255,255,0.98);
+  backdrop-filter: blur(8px);
+  border-radius: 24px;
+  box-shadow: 0 4px 24px rgba(99,102,241,0.08);
+  margin: 40px auto 0 auto;
+  max-width: 420px;
+  min-height: 260px;
+  padding: 40px 32px 32px 32px;
+  text-align: center;
+}
+
+.bcNotifications-no-notifications-icon {
+  font-size: 48px;
+  margin-bottom: 18px;
+  opacity: 0.85;
+}
+
+.bcNotifications-no-notifications-title {
+  font-size: 22px;
+  font-weight: 700;
+  color: #1e293b;
+  margin-bottom: 8px;
+  letter-spacing: -0.5px;
+}
+
+.bcNotifications-no-notifications-desc {
+  color: #64748b;
+  font-size: 15px;
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* Loading State */
 .bcNotifications-loading {
   display: flex;
   flex-direction: column;
@@ -73,32 +218,25 @@
   color: #1e293b;
 }
 
-.bcNotifications-error,
-.bcNotifications-empty {
+/* Error State */
+.bcNotifications-error {
   text-align: center;
   padding: 60px 20px;
-  background: rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.97);
   backdrop-filter: blur(6px);
   border-radius: 20px;
   margin: 40px auto;
   max-width: 500px;
 }
 
-.bcNotifications-empty-icon {
-  font-size: 64px;
-  margin-bottom: 20px;
-}
-
-.bcNotifications-error h2,
-.bcNotifications-empty h3 {
+.bcNotifications-error h2 {
   font-size: 24px;
   font-weight: 700;
   color: #1e293b;
   margin-bottom: 12px;
 }
 
-.bcNotifications-error p,
-.bcNotifications-empty p {
+.bcNotifications-error p {
   color: #64748b;
   margin-bottom: 24px;
   line-height: 1.6;
@@ -120,122 +258,57 @@
   transform: translateY(-2px);
 }
 
-.bcNotifications-list {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.bcNotifications-card {
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(8px);
-  border-radius: 16px;
-  padding: 20px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  transition: all 0.3s ease;
-  cursor: pointer;
-}
-
-.bcNotifications-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
-}
-
-.bcNotifications-card-content {
-  display: flex;
-  align-items: flex-start;
-  gap: 16px;
-}
-
-.bcNotifications-icon {
-  font-size: 24px;
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.bcNotifications-content {
-  flex: 1;
-  min-width: 0;
-}
-
-.bcNotifications-header-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 8px;
-  gap: 16px;
-}
-
-.bcNotifications-notification-title {
-  font-size: 16px;
-  font-weight: 600;
-  color: #1e293b;
-  margin: 0;
-  line-height: 1.4;
-}
-
-.bcNotifications-meta {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-shrink: 0;
-}
-
-.bcNotifications-time {
-  font-size: 12px;
-  color: #64748b;
-  font-weight: 500;
-}
-
-.bcNotifications-message {
-  font-size: 14px;
-  color: #64748b;
-  line-height: 1.5;
-  margin: 0;
-}
-
-.bcNotifications-content-wrapper {
-  width: 100%;
-}
-
 /* Responsive Design */
 @media (max-width: 768px) {
   .bcNotifications-main-content {
-    padding: 16px;
+    padding: 12px;
   }
-
+  .bcNotifications-header {
+    padding: 18px 10px 10px 10px;
+  }
   .bcNotifications-card {
-    padding: 16px;
+    padding: 13px 12px 12px 12px;
   }
-
   .bcNotifications-card-content {
+    grid-template-columns: 44px 2fr 1fr;
     gap: 12px;
   }
-
-  .bcNotifications-header-row {
-    flex-direction: column;
-    gap: 8px;
-    align-items: flex-start;
+  .bcNotifications-icon {
+    width: 36px;
+    height: 36px;
+    font-size: 24px;
+    border-radius: 10px;
   }
-
-  .bcNotifications-meta {
-    align-self: flex-end;
+  .bcNotifications-no-notifications {
+    padding: 28px 8px 18px 8px;
+    min-height: 140px;
   }
 }
 
 @media (max-width: 480px) {
   .bcNotifications-header {
-    padding: 16px;
+    padding: 12px 4px 4px 4px;
   }
-
   .bcNotifications-title {
-    font-size: 24px;
+    font-size: 22px;
+  }
+  .bcNotifications-no-notifications {
+    padding: 18px 4px 12px 4px;
+    min-height: 100px;
+    border-radius: 16px;
+  }
+  .bcNotifications-card {
+    padding: 9px 7px 7px 7px;
+    border-radius: 16px;
+  }
+  .bcNotifications-card-content {
+    grid-template-columns: 32px 2fr 1fr;
+    gap: 8px;
+  }
+  .bcNotifications-icon {
+    width: 28px;
+    height: 28px;
+    font-size: 18px;
+    border-radius: 7px;
   }
 }

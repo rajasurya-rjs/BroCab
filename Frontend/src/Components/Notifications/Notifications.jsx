@@ -11,48 +11,19 @@ const Notifications = () => {
   const [error, setError] = useState(null);
   const { currentUser, getIdToken } = useAuth();
 
-  // FORCE CLEAR BADGE WHEN COMPONENT MOUNTS
-  useEffect(() => {
-    console.log('Notifications component mounted - clearing badge');
-    
-    // Immediately dispatch events to clear badge
-    window.dispatchEvent(new CustomEvent('notificationsViewed'));
-    window.dispatchEvent(new CustomEvent('notificationCleared'));
-    
-    // Set localStorage flag
-    localStorage.setItem('notificationPageVisited', Date.now().toString());
-    localStorage.setItem('notificationBadgeCleared', 'true');
-    
-    // Cleanup when component unmounts
-    return () => {
-      console.log('Notifications component unmounting');
-      window.dispatchEvent(new CustomEvent('notificationCleared'));
-    };
-  }, []);
-
   useEffect(() => {
     if (currentUser) {
       fetchNotifications();
     }
   }, [currentUser]);
 
-  // Mark all notifications as read when component mounts (user views notifications)
-  useEffect(() => {
-    if (notifications.length > 0) {
-      markAllAsReadOnView();
-    }
-  }, [notifications]);
-
   const fetchNotifications = async () => {
     try {
       setLoading(true);
       setError(null);
-      
+
       const token = await getIdToken();
-      
-      if (!token) {
-        throw new Error('No authentication token available');
-      }
+      if (!token) throw new Error('No authentication token available');
 
       const response = await fetch('https://brocab.onrender.com/user/notifications', {
         method: 'GET',
@@ -63,27 +34,14 @@ const Notifications = () => {
       });
 
       if (!response.ok) {
-        if (response.status === 401) {
-          throw new Error('Authentication failed. Please login again.');
-        }
+        if (response.status === 401) throw new Error('Authentication failed. Please login again.');
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
       const data = await response.json();
-      console.log('Notifications API Response:', data);
-      
-      let newNotifications = [];
-      if (data && data.notifications && Array.isArray(data.notifications)) {
-        newNotifications = data.notifications;
-      } else if (Array.isArray(data)) {
-        newNotifications = data;
-      }
-
-      setNotifications(newNotifications);
-      
-    } catch (error) {
-      console.error('Error fetching notifications:', error);
-      if (error.message.includes('Authentication failed')) {
+      setNotifications(Array.isArray(data) ? data : []);
+    } catch (err) {
+      if (err.message.includes('Authentication failed')) {
         setError('Session expired. Please login again.');
       } else {
         setError('Failed to load notifications');
@@ -94,110 +52,61 @@ const Notifications = () => {
     }
   };
 
-  // Mark all notifications as read when user views the notifications page
-  const markAllAsReadOnView = async () => {
-    try {
+  // Mark as read when loaded
+  useEffect(() => {
+    const markAllAsRead = async () => {
+      if (!currentUser || notifications.length === 0) return;
       const token = await getIdToken();
-      if (!token) return;
-
-      const unreadNotifications = notifications.filter(n => !n.read);
-      
-      if (unreadNotifications.length === 0) return;
-
-      console.log('Marking all notifications as read...');
-
-      // Mark all unread notifications as read
-      const promises = unreadNotifications.map(notification =>
-        fetch(`https://brocab.onrender.com/notification/${notification.notification_id}/read`, {
+      const unread = notifications.filter(n => !n.is_read);
+      await Promise.all(unread.map(n =>
+        fetch(`https://brocab.onrender.com/notification/${n.id}/read`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${token}`
           }
         })
-      );
-
-      await Promise.all(promises);
-
-      // Update local state to mark all as read
-      setNotifications(prev => 
-        prev.map(notification => ({ ...notification, read: true }))
-      );
-
-      // Dispatch events to clear navbar count
-      window.dispatchEvent(new CustomEvent('notificationsViewed'));
-      window.dispatchEvent(new CustomEvent('notificationCleared'));
-      
-      // Set localStorage flags
-      localStorage.setItem('notificationBadgeCleared', 'true');
-      localStorage.setItem('notificationPageVisited', Date.now().toString());
-      
-    } catch (error) {
-      console.error('Error marking notifications as read:', error);
-    }
-  };
+      ));
+      setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
+    };
+    markAllAsRead();
+    // eslint-disable-next-line
+  }, [notifications, currentUser]);
 
   const formatTime = (timestamp) => {
     if (!timestamp) return 'N/A';
-    
     try {
       const date = new Date(timestamp);
-      const now = new Date();
-      const diffInMinutes = Math.floor((now - date) / (1000 * 60));
-      
-      if (diffInMinutes < 1) return 'Just now';
-      if (diffInMinutes < 60) return `${diffInMinutes}m ago`;
-      
-      const diffInHours = Math.floor(diffInMinutes / 60);
-      if (diffInHours < 24) return `${diffInHours}h ago`;
-      
-      const diffInDays = Math.floor(diffInHours / 24);
-      if (diffInDays < 7) return `${diffInDays}d ago`;
-      
-      return date.toLocaleDateString('en-US', {
+      return date.toLocaleString('en-IN', {
+        year: 'numeric',
         month: 'short',
         day: 'numeric',
-        year: date.getFullYear() !== now.getFullYear() ? 'numeric' : undefined
+        hour: '2-digit',
+        minute: '2-digit'
       });
     } catch {
-      return 'N/A';
+      return timestamp;
     }
   };
 
-  const getNotificationIcon = (title) => {
-    const lowerTitle = title?.toLowerCase() || '';
-    
-    if (lowerTitle.includes('join request') || lowerTitle.includes('wants to join')) return '🙋‍♂️';
-    if (lowerTitle.includes('accepted') || lowerTitle.includes('approved')) return '✅';
-    if (lowerTitle.includes('rejected') || lowerTitle.includes('declined')) return '❌';
-    if (lowerTitle.includes('new ride') || lowerTitle.includes('available')) return '🚗';
-    if (lowerTitle.includes('cancelled')) return '🚫';
-    if (lowerTitle.includes('reminder')) return '⏰';
-    if (lowerTitle.includes('payment')) return '💳';
+  const getIcon = (type, title) => {
+    if (type === 'participant_removed') return '🚫';
+    if (type === 'ride_cancelled') return '🚗❌';
+    if (title?.toLowerCase().includes('join request')) return '🙋‍♂️';
+    if (title?.toLowerCase().includes('accepted')) return '✅';
+    if (title?.toLowerCase().includes('rejected')) return '❌';
     return '📢';
-  };
-
-  const handleNotificationClick = (notification) => {
-    // Navigate based on notification type
-    const title = notification.title?.toLowerCase() || '';
-    if (title.includes('join request') || title.includes('wants to join')) {
-      window.location.href = '/my-rides';
-    } else if (title.includes('accepted') || title.includes('approved')) {
-      window.location.href = '/my-booked-rides';
-    } else if (title.includes('rejected')) {
-      window.location.href = '/requested';
-    }
   };
 
   if (!currentUser) {
     return (
-      <div className="bcNotifications-container" style={{ backgroundImage: `url(${BACKGROUND_IMAGE})` }}>
+      <div className="bcMyRides-container" style={{ backgroundImage: `url(${BACKGROUND_IMAGE})` }}>
         <Navbar />
-        <div className="bcNotifications-main-content">
-          <div className="bcNotifications-error">
+        <div className="bcMyRides-main-content">
+          <div className="bcMyRides-error">
             <h2>Authentication Required</h2>
             <p>Please login to view your notifications.</p>
-            <button onClick={() => window.location.href = '/login'} className="bcNotifications-back-btn">
+            <button onClick={() => window.location.href = '/login'} className="bcMyRides-back-btn">
               Go to Login
             </button>
           </div>
@@ -208,11 +117,11 @@ const Notifications = () => {
 
   if (loading) {
     return (
-      <div className="bcNotifications-container" style={{ backgroundImage: `url(${BACKGROUND_IMAGE})` }}>
+      <div className="bcMyRides-container" style={{ backgroundImage: `url(${BACKGROUND_IMAGE})` }}>
         <Navbar />
-        <div className="bcNotifications-main-content">
-          <div className="bcNotifications-loading">
-            <div className="bcNotifications-spinner"></div>
+        <div className="bcMyRides-main-content">
+          <div className="bcMyRides-loading">
+            <div className="bcMyRides-spinner"></div>
             <p>Loading your notifications...</p>
           </div>
         </div>
@@ -222,13 +131,13 @@ const Notifications = () => {
 
   if (error) {
     return (
-      <div className="bcNotifications-container" style={{ backgroundImage: `url(${BACKGROUND_IMAGE})` }}>
+      <div className="bcMyRides-container" style={{ backgroundImage: `url(${BACKGROUND_IMAGE})` }}>
         <Navbar />
-        <div className="bcNotifications-main-content">
-          <div className="bcNotifications-error">
+        <div className="bcMyRides-main-content">
+          <div className="bcMyRides-error">
             <h2>Oops! Something went wrong</h2>
             <p>{error}</p>
-            <button onClick={fetchNotifications} className="bcNotifications-back-btn">
+            <button onClick={fetchNotifications} className="bcMyRides-back-btn">
               Retry
             </button>
           </div>
@@ -238,52 +147,80 @@ const Notifications = () => {
   }
 
   return (
-    <div className="bcNotifications-container" style={{ backgroundImage: `url(${BACKGROUND_IMAGE})` }}>
+    <div className="bcMyRides-container" style={{ backgroundImage: `url(${BACKGROUND_IMAGE})` }}>
       <Navbar />
-      
-      <div className="bcNotifications-main-content">
-        <div className="bcNotifications-header">
-          <h1 className="bcNotifications-title">Notifications</h1>
-          <p className="bcNotifications-subtitle">
+      <div className="bcMyRides-main-content">
+        {/* Header Section */}
+        <div className="bcMyRides-search-section">
+          <h1 className="bcMyRides-header-title">Notifications</h1>
+          <p className="bcMyRides-header-subtitle">
             Stay updated with your ride activities
           </p>
         </div>
 
-        <div className="bcNotifications-content-wrapper">
+        {/* Results Info */}
+        <div className="bcMyRides-results-info">
+          <span className="bcMyRides-results-count">
+            {notifications.length} notifications
+          </span>
+        </div>
+
+        <div className="bcMyRides-content-wrapper">
           {notifications.length === 0 ? (
-            <div className="bcNotifications-empty">
-              <div className="bcNotifications-empty-icon">📪</div>
+            <div className="bcMyRides-no-rides">
+              <div className="bcMyRides-no-rides-icon">📪</div>
               <h3>No notifications yet</h3>
               <p>You'll see your ride updates and alerts here.</p>
             </div>
           ) : (
-            <div className="bcNotifications-list">
-              {notifications.map((notification, index) => (
-                <div 
-                  key={`notification-${notification.notification_id}-${index}`} 
-                  className="bcNotifications-card"
-                  onClick={() => handleNotificationClick(notification)}
-                >
-                  <div className="bcNotifications-card-content">
-                    <div className="bcNotifications-icon">
-                      {getNotificationIcon(notification.title)}
+            <div className="bcMyRides-list">
+              {notifications.map((n, idx) => (
+                <div key={n.id || idx} className="bcMyRides-card">
+                  <div className="bcMyRides-card-content" style={{ gridTemplateColumns: '60px 2fr 1fr' }}>
+                    {/* Icon */}
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <span
+                        style={{
+                          fontSize: 36,
+                          borderRadius: '12px',
+                          background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
+                          color: 'white',
+                          width: 48,
+                          height: 48,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          boxShadow: '0 2px 8px rgba(139,92,246,0.09)'
+                        }}
+                      >
+                        {getIcon(n.type, n.title)}
+                      </span>
                     </div>
-                    
-                    <div className="bcNotifications-content">
-                      <div className="bcNotifications-header-row">
-                        <h3 className="bcNotifications-notification-title">
-                          {notification.title}
-                        </h3>
-                        <div className="bcNotifications-meta">
-                          <span className="bcNotifications-time">
-                            {formatTime(notification.timestamp)}
-                          </span>
-                        </div>
-                      </div>
-                      
-                      <p className="bcNotifications-message">
-                        {notification.message}
-                      </p>
+                    {/* Main Info */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                      <span style={{ fontWeight: 700, fontSize: 17, color: '#1e293b' }}>{n.title}</span>
+                      <span style={{ fontSize: 15, color: '#64748b', fontWeight: 500 }}>{n.message}</span>
+                      <span style={{ fontSize: 13, color: '#8b5cf6', fontWeight: 500, marginTop: 4 }}>
+                        {n.origin && n.destination &&
+                          <>From <b>{n.origin}</b> to <b>{n.destination}</b> &middot; {n.date} {n.time}</>
+                        }
+                      </span>
+                    </div>
+                    {/* Time */}
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8 }}>
+                      <span style={{ fontSize: 13, color: '#64748b', fontWeight: 600 }}>
+                        {formatTime(n.created_at)}
+                      </span>
+                      {!n.is_read && (
+                        <span style={{
+                          fontSize: 12,
+                          color: '#10b981',
+                          background: '#e0f7ef',
+                          borderRadius: 8,
+                          padding: '2px 10px',
+                          fontWeight: 700
+                        }}>NEW</span>
+                      )}
                     </div>
                   </div>
                 </div>

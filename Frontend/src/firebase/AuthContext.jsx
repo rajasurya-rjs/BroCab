@@ -5,6 +5,8 @@ import {
   signOut,
   onAuthStateChanged,
   updateProfile,
+  GoogleAuthProvider,
+  signInWithPopup,
 } from "firebase/auth";
 import { auth } from "./config";
 
@@ -29,19 +31,15 @@ export function AuthProvider({ children }) {
   // Sign up function
   const signup = async (email, password, displayName) => {
     try {
-      console.log("Firebase Auth initialized:", auth);
       const userCredential = await createUserWithEmailAndPassword(
         auth,
         email,
         password
       );
-      console.log("Firebase user created:", userCredential);
-
       // Update the user's display name
       if (displayName) {
         await updateProfile(userCredential.user, { displayName });
       }
-
       return userCredential;
     } catch (error) {
       throw error;
@@ -52,6 +50,21 @@ export function AuthProvider({ children }) {
   const login = async (email, password) => {
     try {
       return await signInWithEmailAndPassword(auth, email, password);
+    } catch (error) {
+      throw error;
+    }
+  };
+
+  // Google Sign-In function
+  const signInWithGoogle = async () => {
+    try {
+      const provider = new GoogleAuthProvider();
+      const result = await signInWithPopup(auth, provider);
+      setCurrentUser(result.user);
+      // Optionally, update idToken here
+      const token = await result.user.getIdToken();
+      setIdToken(token);
+      return result;
     } catch (error) {
       throw error;
     }
@@ -93,22 +106,12 @@ export function AuthProvider({ children }) {
 
     if (token) {
       headers.Authorization = `Bearer ${token}`;
-      console.log(
-        "AuthContext: Adding bearer token to request:",
-        token.substring(0, 20) + "..."
-      );
+      // console.log("AuthContext: Adding bearer token to request:", token.substring(0, 20) + "...");
     } else {
-      console.warn(
-        "AuthContext: No authentication token available for API call"
-      );
+      // console.warn("AuthContext: No authentication token available for API call");
     }
 
-    console.log(
-      "AuthContext: Making API call to:",
-      url,
-      "with headers:",
-      headers
-    );
+    // console.log("AuthContext: Making API call to:", url, "with headers:", headers);
 
     const response = await fetch(url, {
       ...options,
@@ -116,9 +119,7 @@ export function AuthProvider({ children }) {
     });
 
     if (!response.ok) {
-      const error = await response
-        .json()
-        .catch(() => ({ error: "Network error" }));
+      const error = await response.json().catch(() => ({ error: "Network error" }));
       throw new Error(error.error || `HTTP error! status: ${response.status}`);
     }
 
@@ -142,15 +143,9 @@ export function AuthProvider({ children }) {
 
       if (token) {
         headers.Authorization = `Bearer ${token}`;
-        console.log(
-          "AuthContext: Adding bearer token to request:",
-          token.substring(0, 20) + "..."
-        );
       } else {
         throw new Error("No authentication token available");
       }
-
-      console.log("AuthContext: Making API call to create user profile");
 
       const response = await fetch("https://brocab.onrender.com/user", {
         method: "POST",
@@ -159,12 +154,8 @@ export function AuthProvider({ children }) {
       });
 
       if (!response.ok) {
-        const error = await response
-          .json()
-          .catch(() => ({ error: "Network error" }));
-        throw new Error(
-          error.error || `HTTP error! status: ${response.status}`
-        );
+        const error = await response.json().catch(() => ({ error: "Network error" }));
+        throw new Error(error.error || `HTTP error! status: ${response.status}`);
       }
 
       return await response.json();
@@ -176,18 +167,13 @@ export function AuthProvider({ children }) {
 
   // Fetch user details and set user name
   const fetchUserDetails = async () => {
-    
-
     let token = await getIdToken();
-    console.log(typeof(token))
-   
     if (token) {
       try {
         const response = await fetch("https://brocab.onrender.com/user", {
           method: "GET",
           headers: {
-            // "Content-Type": "application/json", // Recommended for JSON APIs
-            "Authorization": `Bearer ${token}`, // Include the Bearer token
+            "Authorization": `Bearer ${token}`,
           },
         });
 
@@ -260,7 +246,8 @@ export function AuthProvider({ children }) {
     apiCall,
     createUserProfile,
     loading,
-    fetchUserDetails, // Expose fetchUserDetails function
+    fetchUserDetails,
+    signInWithGoogle, // Included and in correct scope
   };
 
   return (

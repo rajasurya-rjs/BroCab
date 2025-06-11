@@ -2,9 +2,6 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../firebase/AuthContext';
 import Navbar from '../Navbar/Navbar';
-
-
-
 const styles = {
   pageWrapper: {
     minHeight: "100vh",

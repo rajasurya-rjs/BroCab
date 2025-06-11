@@ -755,7 +755,7 @@ const Dashboard = () => {
                 </div>
                 
                 <div className="bcDash-premium-inputs">
-                  {/* Enhanced Pickup Location */}
+                  {/* Enhanced Pickup Location - CURRENT LOCATION BUTTON REMOVED */}
                   <div className="bcDash-premium-input-group" onClick={(e) => e.stopPropagation()}>
                     <div className="bcDash-input-icon bcDash-pickup-icon">
                       <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
@@ -773,24 +773,6 @@ const Dashboard = () => {
                       autoComplete="off"
                       required
                     />
-                    
-                    {/* Current Location Button */}
-                    <button
-                      type="button"
-                      className={`bcDash-current-location-btn ${gettingLocation ? 'loading' : ''}`}
-                      onClick={() => useCurrentLocation('pickup', 'search')}
-                      title="Use current location"
-                      disabled={gettingLocation}
-                    >
-                      {gettingLocation ? (
-                        <div className="bcDash-location-spinner"></div>
-                      ) : (
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                          <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2"/>
-                          <circle cx="12" cy="12" r="3" fill="currentColor"/>
-                        </svg>
-                      )}
-                    </button>
                     
                     <div className="bcDash-input-focus-line"></div>
                     
@@ -840,7 +822,7 @@ const Dashboard = () => {
                     )}
                   </div>
                   
-                  {/* Enhanced Destination */}
+                  {/* Enhanced Destination - CURRENT LOCATION BUTTON REMOVED */}
                   <div className="bcDash-premium-input-group" onClick={(e) => e.stopPropagation()}>
                     <div className="bcDash-input-icon bcDash-destination-icon">
                       <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
@@ -858,24 +840,6 @@ const Dashboard = () => {
                       autoComplete="off"
                       required
                     />
-                    
-                    {/* Current Location Button */}
-                    <button
-                      type="button"
-                      className={`bcDash-current-location-btn ${gettingLocation ? 'loading' : ''}`}
-                      onClick={() => useCurrentLocation('destination', 'search')}
-                      title="Use current location"
-                      disabled={gettingLocation}
-                    >
-                      {gettingLocation ? (
-                        <div className="bcDash-location-spinner"></div>
-                      ) : (
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                          <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2"/>
-                          <circle cx="12" cy="12" r="3" fill="currentColor"/>
-                        </svg>
-                      )}
-                    </button>
                     
                     <div className="bcDash-input-focus-line"></div>
                     
@@ -969,7 +933,7 @@ const Dashboard = () => {
                 
                 <div className="bcDash-premium-inputs">
                   <div className="bcDash-input-row">
-                    {/* Enhanced Pickup Location */}
+                    {/* Enhanced Pickup Location - CURRENT LOCATION BUTTON REMOVED */}
                     <div className="bcDash-premium-input-group" onClick={(e) => e.stopPropagation()}>
                       <div className="bcDash-input-icon bcDash-pickup-icon">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
@@ -987,24 +951,6 @@ const Dashboard = () => {
                         autoComplete="off"
                         required
                       />
-                      
-                      {/* Current Location Button */}
-                      <button
-                        type="button"
-                        className={`bcDash-current-location-btn ${gettingLocation ? 'loading' : ''}`}
-                        onClick={() => useCurrentLocation('pickup', 'offer')}
-                        title="Use current location"
-                        disabled={gettingLocation}
-                      >
-                        {gettingLocation ? (
-                          <div className="bcDash-location-spinner"></div>
-                        ) : (
-                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                            <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2"/>
-                            <circle cx="12" cy="12" r="3" fill="currentColor"/>
-                          </svg>
-                        )}
-                      </button>
                       
                       <div className="bcDash-input-focus-line"></div>
                       
@@ -1054,7 +1000,7 @@ const Dashboard = () => {
                       )}
                     </div>
                     
-                    {/* Enhanced Destination */}
+                    {/* Enhanced Destination - CURRENT LOCATION BUTTON REMOVED */}
                     <div className="bcDash-premium-input-group" onClick={(e) => e.stopPropagation()}>
                       <div className="bcDash-input-icon bcDash-destination-icon">
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
@@ -1072,24 +1018,6 @@ const Dashboard = () => {
                         autoComplete="off"
                         required
                       />
-                      
-                      {/* Current Location Button */}
-                      <button
-                        type="button"
-                        className={`bcDash-current-location-btn ${gettingLocation ? 'loading' : ''}`}
-                        onClick={() => useCurrentLocation('destination', 'offer')}
-                        title="Use current location"
-                        disabled={gettingLocation}
-                      >
-                        {gettingLocation ? (
-                          <div className="bcDash-location-spinner"></div>
-                        ) : (
-                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                            <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2"/>
-                            <circle cx="12" cy="12" r="3" fill="currentColor"/>
-                          </svg>
-                        )}
-                      </button>
                       
                       <div className="bcDash-input-focus-line"></div>
                       
