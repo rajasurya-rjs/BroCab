@@ -67,6 +67,7 @@ const Dashboard = () => {
 
   // Premium locations with cleaner display names for the new UI
   const PREMIUM_LOCATIONS = [
+    // Educational Institutions
     {
       keywords: ['scaler', 'scaler micro', 'scaler micro campus', 'scaler school', 'scaler academy', 'scaler school of technology', 'electronic city', 'electronic city phase 1', 'electronic city phase one'],
       name: 'Scaler Micro Campus',
@@ -77,25 +78,17 @@ const Dashboard = () => {
       category: 'Tech Campus'
     },
     {
-      keywords: ['uniworld', 'uniworld 2', 'uniworld city', 'uniworld apartments'],
-      name: 'Uniworld 2',
-      display_name: 'Neeladri Road, Electronic City, Bengaluru',
-      lat: 12.8398,
-      lon: 77.6745,
-      type: 'residential',
-      category: 'Apartment Complex'
+      keywords: ['scaler macro', 'scaler macro campus', 'scaler school of technology macro', 'sst macro', 'macro campus', 'scaler school macro' , 'sst' , 'ssb'],
+      name: 'Scaler Macro Campus',
+      display_name: 'Scaler School of Technology, Lavelle Road, Bengaluru',
+      lat: 12.9716,
+      lon: 77.5946,
+      type: 'education',
+      category: 'Tech Campus'
     },
+    // Airports
     {
-      keywords: ['stanza', 'stanza lisbon', 'stanza living lisbon', 'lisbon', 'stanza living'],
-      name: 'Stanza Living Lisbon',
-      display_name: 'Electronic City Phase 1, Bengaluru',
-      lat: 12.8445,
-      lon: 77.6678,
-      type: 'accommodation',
-      category: 'Co-living Space'
-    },
-    {
-      keywords: ['airport', 'kempegowda', 'bangalore airport', 'blr airport', 'international airport', 'bengaluru airport'],
+      keywords: ['airport', 'kempegowda', 'bangalore airport', 'blr airport', 'international airport', 'bengaluru airport', 'kia', 'devanahalli'],
       name: 'Kempegowda International Airport',
       display_name: 'KIAL Rd, Devanahalli, Bengaluru',
       lat: 13.1986,
@@ -104,7 +97,17 @@ const Dashboard = () => {
       category: 'Airport'
     },
     {
-      keywords: ['ksr bangalore railway junction', 'ksr', 'bangalore railway station', 'majestic railway station', 'krantivira sangolli rayanna', 'majestic', 'bangalore city railway station'],
+      keywords: ['hal airport', 'hal old airport', 'hindustan aeronautics limited airport'],
+      name: 'HAL Airport',
+      display_name: 'HAL Old Airport, Marathahalli, Bengaluru',
+      lat: 12.9507,
+      lon: 77.6681,
+      type: 'airport',
+      category: 'Airport'
+    },
+    // Railway Stations
+    {
+      keywords: ['ksr bangalore railway junction', 'ksr', 'bangalore railway station', 'majestic railway station', 'krantivira sangolli rayanna', 'majestic', 'bangalore city railway station', 'src', 'city railway station'],
       name: 'KSR Bengaluru Station',
       display_name: 'Majestic, Bengaluru City',
       lat: 12.9763,
@@ -113,7 +116,7 @@ const Dashboard = () => {
       category: 'Railway Station'
     },
     {
-      keywords: ['smvt', 'smvt bengaluru'],
+      keywords: ['smvt', 'smvt bengaluru', 'byappanahalli terminal', 'sir m visvesvaraya terminal'],
       name: 'SMVT Bengaluru Station',
       display_name: 'Sir M. Visvesvaraya Terminal, Baiyappanahalli',
       lat: 12.9946,
@@ -122,7 +125,7 @@ const Dashboard = () => {
       category: 'Railway Station'
     },
     {
-      keywords: ['yeswanthpur', 'ypr'],
+      keywords: ['yeswanthpur', 'yeshwanthpur', 'ypr', 'yeswanthpur junction'],
       name: 'Yeswanthpur Station',
       display_name: 'Yeswanthpur Junction, Bengaluru',
       lat: 13.0238,
@@ -131,9 +134,92 @@ const Dashboard = () => {
       category: 'Railway Station'
     },
     {
-      keywords: ['electronic city', 'ecity'],
+      keywords: ['bangalore cantonment', 'cantonment railway station', 'blc'],
+      name: 'Bangalore Cantonment',
+      display_name: 'Cantonment Railway Station, Bengaluru',
+      lat: 12.9925,
+      lon: 77.5832,
+      type: 'railway_station',
+      category: 'Railway Station'
+    },
+    {
+      keywords: ['krishnarajapuram', 'kr puram railway station', 'kpj'],
+      name: 'Krishnarajapuram Station',
+      display_name: 'KR Puram Railway Station, Bengaluru',
+      lat: 13.0098,
+      lon: 77.7084,
+      type: 'railway_station',
+      category: 'Railway Station'
+    },
+    {
+      keywords: ['whitefield', 'whitefield railway station', 'wfd'],
+      name: 'Whitefield Station',
+      display_name: 'Whitefield Railway Station, Bengaluru',
+      lat: 12.9716,
+      lon: 77.7473,
+      type: 'railway_station',
+      category: 'Railway Station'
+    },
+    // Major Bus Stands
+    {
+      keywords: ['majestic bus stand', 'kempegowda bus station', 'kbs', 'central bus stand', 'ksrtc central'],
+      name: 'Kempegowda Bus Station',
+      display_name: 'Majestic, Bengaluru',
+      lat: 12.9766,
+      lon: 77.5713,
+      type: 'bus_station',
+      category: 'Bus Station'
+    },
+    {
+      keywords: ['satellite bus stand', 'mysore road bus stand', 'ksrtc satellite'],
+      name: 'Satellite Bus Station',
+      display_name: 'Mysore Road, Bengaluru',
+      lat: 12.9511,
+      lon: 77.5503,
+      type: 'bus_station',
+      category: 'Bus Station'
+    },
+    {
+      keywords: ['shantinagar', 'shanthinagar bus stand', 'shantinagar ttmc'],
+      name: 'Shantinagar TTMC',
+      display_name: 'Shantinagar Bus Station, Bengaluru',
+      lat: 12.9553,
+      lon: 77.5959,
+      type: 'bus_station',
+      category: 'Bus Station'
+    },
+    {
+      keywords: ['banashankari', 'banashankari bus stand', 'bsk bus stand', 'bsk ttmc'],
+      name: 'Banashankari TTMC',
+      display_name: 'Banashankari Bus Station, Bengaluru',
+      lat: 12.9417,
+      lon: 77.5466,
+      type: 'bus_station',
+      category: 'Bus Station'
+    },
+    {
+      keywords: ['jayanagar', 'jayanagar 4th block', 'jayanagar bus stand', 'jayanagar ttmc'],
+      name: 'Jayanagar TTMC',
+      display_name: '4th Block, Jayanagar, Bengaluru',
+      lat: 12.9300,
+      lon: 77.5833,
+      type: 'bus_station',
+      category: 'Bus Station'
+    },
+    {
+      keywords: ['kengeri', 'kengeri bus stand', 'kengeri satellite bus stand'],
+      name: 'Kengeri Bus Station',
+      display_name: 'Kengeri, Bengaluru',
+      lat: 12.8991,
+      lon: 77.4837,
+      type: 'bus_station',
+      category: 'Bus Station'
+    },
+    // Popular Areas
+    {
+      keywords: ['electronic city', 'ecity', 'e-city'],
       name: 'Electronic City',
-      display_name: 'Bengaluru, Karnataka',
+      display_name: 'Electronic City, Bengaluru',
       lat: 12.8456,
       lon: 77.6632,
       type: 'area',
@@ -142,7 +228,7 @@ const Dashboard = () => {
     {
       keywords: ['koramangala'],
       name: 'Koramangala',
-      display_name: 'Bengaluru, Karnataka',
+      display_name: 'Koramangala, Bengaluru',
       lat: 12.9279,
       lon: 77.6271,
       type: 'area',
@@ -228,7 +314,7 @@ const Dashboard = () => {
         if (formType === 'search') setShowSearchSuggestions(prev => ({ ...prev, [fieldName]: false }));
         else setShowOfferSuggestions(prev => ({ ...prev, [fieldName]: false }));
       }
-    }, 150),
+    }, 500),
     [apiCache]
   );
 
